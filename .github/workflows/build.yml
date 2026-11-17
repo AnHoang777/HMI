@@ -1,0 +1,61 @@
+name: Build iOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build for iOS Simulator
+        run: |
+          set -o pipefail
+          for scheme in HMI HMIDemo; do
+            xcodebuild -project HMI.xcodeproj -scheme "$scheme" \
+              -configuration Debug \
+              -sdk iphonesimulator \
+              -destination 'generic/platform=iOS Simulator' \
+              -derivedDataPath build/sim \
+              build
+          done
+          cd build/sim/Build/Products/Debug-iphonesimulator
+          zip -qry "$GITHUB_WORKSPACE/HMI-simulator.zip" HMI.app "HMIDemo.app"
+
+      - name: Build unsigned IPA (for sideloading)
+        run: |
+          set -o pipefail
+          for scheme in HMI HMIDemo; do
+            xcodebuild -project HMI.xcodeproj -scheme "$scheme" \
+              -configuration Release \
+              -sdk iphoneos \
+              -destination 'generic/platform=iOS' \
+              -derivedDataPath build/device \
+              CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+              build
+            rm -rf Payload && mkdir Payload
+            cp -R "build/device/Build/Products/Release-iphoneos/$scheme.app" Payload/
+            zip -qry "$scheme-unsigned.ipa" Payload
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: HMI-builds
+          path: |
+            HMI-unsigned.ipa
+            HMIDemo-unsigned.ipa
+            HMI-simulator.zip

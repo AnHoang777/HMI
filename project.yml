@@ -1,0 +1,71 @@
+name: HMI
+
+options:
+  bundleIdPrefix: com.hmidash
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+
+targetTemplates:
+  DashboardApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    scheme: {}
+    info:
+      path: Config/${target_name}-Info.plist
+      properties:
+        CFBundleDisplayName: $(DISPLAY_NAME)
+        LSRequiresIPhoneOS: true
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UIStatusBarHidden: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSBluetoothAlwaysUsageDescription: "Ứng dụng cần Bluetooth để nhận dữ liệu xe từ ESP32."
+        UIBackgroundModes:
+          - bluetooth-central
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Phone
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).PhoneSceneDelegate
+            CPTemplateApplicationSceneSessionRoleApplication:
+              - UISceneConfigurationName: CarPlay
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).CarPlaySceneDelegate
+
+targets:
+  # Bản chính: CarPlay dùng template chuẩn của Apple (danh mục Driving Task)
+  HMI:
+    templates: [DashboardApp]
+    entitlements:
+      path: Config/HMI.entitlements
+      properties:
+        com.apple.developer.carplay-driving-task: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hmidash.app
+        DISPLAY_NAME: HMI
+
+  # Bản demo: CarPlay vẽ nguyên dashboard (dùng cơ chế app dẫn đường) – chỉ để trình diễn
+  HMIDemo:
+    templates: [DashboardApp]
+    entitlements:
+      path: Config/HMIDemo.entitlements
+      properties:
+        com.apple.developer.carplay-maps: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hmidash.app.demo
+        DISPLAY_NAME: HMI Demo
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) CARPLAY_FULL_DASHBOARD"

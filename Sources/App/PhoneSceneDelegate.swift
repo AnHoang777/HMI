@@ -15,6 +15,11 @@ final class PhoneSceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window = window
         UIApplication.shared.isIdleTimerDisabled = true   // không tắt màn hình khi đang chạy
     }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        // Live Activity chỉ được bắt đầu khi app đang mở
+        LiveActivityManager.shared.start()
+    }
 }
 
 final class DashboardHostingController: UIHostingController<DashboardScreen> {

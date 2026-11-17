@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var store: VehicleStore
     @Environment(\.dismiss) var dismiss
+    @AppStorage(LiveActivityManager.enabledKey) var liveActivityEnabled = true
 
     var body: some View {
         NavigationStack {
@@ -31,8 +32,13 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                Section("CarPlay") {
+                Section {
                     LabeledContent("Trạng thái", value: store.carPlayConnected ? "Đã kết nối" : "Chưa kết nối")
+                    Toggle("Live Activity (CarPlay, màn hình khoá)", isOn: $liveActivityEnabled)
+                } header: {
+                    Text("CarPlay")
+                } footer: {
+                    Text("Trên iOS 26, thẻ tốc độ / pin / quãng đường hiện trên CarPlay kể cả khi khoá iPhone. Bật: Cài đặt → Cài đặt chung → CarPlay → xe của bạn → Hiện widget.")
                 }
 
                 Section {
@@ -41,6 +47,13 @@ struct SettingsView: View {
                         .font(.system(.footnote, design: .monospaced))
                 } header: {
                     Text("Giao thức ESP32")
+                }
+            }
+            .onChange(of: liveActivityEnabled) { _, enabled in
+                if enabled {
+                    LiveActivityManager.shared.start()
+                } else {
+                    LiveActivityManager.shared.stop()
                 }
             }
             .navigationTitle("Cài đặt")

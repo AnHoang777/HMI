@@ -13,6 +13,11 @@ for f in ExtraBold Bold SemiBold Medium MediumItalic; do
   [ -f "$TTF/BeVietnamPro-$f.ttf" ] || curl -fsSL -o "$TTF/BeVietnamPro-$f.ttf" "$BASE/BeVietnamPro-$f.ttf"
 done
 
+# Icon: Google Material Symbols Rounded (giấy phép Apache 2.0)
+ICONS="$TTF/MaterialSymbolsRounded.ttf"
+[ -f "$ICONS" ] || curl -fsSL -o "$ICONS" \
+  "https://raw.githubusercontent.com/google/material-design-icons/master/variablefont/MaterialSymbolsRounded%5BFILL,GRAD,opsz,wght%5D.ttf"
+
 # ASCII + ° + toàn bộ chữ cái tiếng Việt có dấu + …
 VN="0x20-0x7E,0xB0,0xC0-0xC3,0xC8-0xCA,0xCC-0xCD,0xD2-0xD5,0xD9-0xDA,0xDD,0xE0-0xE3,0xE8-0xEA,0xEC-0xED,0xF2-0xF5,0xF9-0xFA,0xFD,0x102-0x103,0x110-0x111,0x128-0x129,0x168-0x169,0x1A0-0x1A1,0x1AF-0x1B0,0x1EA0-0x1EF9,0x2026"
 
@@ -38,3 +43,10 @@ conv BeVietnamPro-Bold.ttf          26 font_value_26  --range "0x20-0x7E,0xB0"
 conv BeVietnamPro-SemiBold.ttf      22 font_mid_22    --range "$VN"
 conv BeVietnamPro-Medium.ttf        16 font_label_16  --range "$VN"
 conv BeVietnamPro-MediumItalic.ttf  16 font_italic_16 --range "$VN"
+
+# speed (ODO), route (TRIP), thermometer, bolt, power (phích cắm), offline_bolt
+conv MaterialSymbolsRounded.ttf     28 font_icons_28  --range "0xE9E4,0xEACD,0xE846,0xEA0B,0xE63C,0xE932"
+# bluetooth, eco (lá)
+conv MaterialSymbolsRounded.ttf     20 font_icons_20  --range "0xE1A7,0xEA35"
+# electric_moped (xe tay ga điện)
+conv MaterialSymbolsRounded.ttf     96 font_icon_96   --range "0xEB1D"

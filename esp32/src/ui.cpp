@@ -142,56 +142,7 @@ void neonRing(lv_draw_ctx_t *ctx, int cx, int cy, int r, int w, lv_color_t c, lv
     drawRing(ctx, cx, cy, r, w, lv_color_mix(cWhite(), c, 50));
 }
 
-// ---------------------------------------------------------------- biểu tượng
-void iconBolt(lv_draw_ctx_t *ctx, int cx, int cy, float s, lv_color_t c) {
-    lv_point_t p[4] = {{(lv_coord_t)(cx + 3 * s), (lv_coord_t)(cy - 10 * s)},
-                       {(lv_coord_t)(cx - 5 * s), (lv_coord_t)(cy + 1 * s)},
-                       {(lv_coord_t)(cx + 5 * s), (lv_coord_t)(cy - 1 * s)},
-                       {(lv_coord_t)(cx - 3 * s), (lv_coord_t)(cy + 10 * s)}};
-    drawPolyline(ctx, c, (int)(3 * s + 0.5f), p, 4);
-}
-
-void iconRoad(lv_draw_ctx_t *ctx, int cx, int cy, lv_color_t c) {
-    drawLine(ctx, c, 2, cx - 3, cy - 11, cx - 9, cy + 11);
-    drawLine(ctx, c, 2, cx + 3, cy - 11, cx + 9, cy + 11);
-    drawLine(ctx, c, 2, cx, cy - 9, cx, cy - 5);
-    drawLine(ctx, c, 2, cx, cy - 1, cx, cy + 3);
-    drawLine(ctx, c, 2, cx, cy + 7, cx, cy + 10);
-}
-
-void iconThermo(lv_draw_ctx_t *ctx, int cx, int cy, lv_color_t c) {
-    lv_draw_rect_dsc_t d;
-    lv_draw_rect_dsc_init(&d);
-    d.bg_opa = LV_OPA_TRANSP;
-    d.border_color = c;
-    d.border_width = 2;
-    d.radius = 4;
-    lv_area_t tube = {(lv_coord_t)(cx - 4), (lv_coord_t)(cy - 13), (lv_coord_t)(cx + 4), (lv_coord_t)(cy + 4)};
-    lv_draw_rect(ctx, &d, &tube);
-    drawCircle(ctx, cx, cy + 8, 6, c, LV_OPA_COVER);
-    drawLine(ctx, c, 2, cx, cy - 7, cx, cy + 4);
-}
-
-void iconPlug(lv_draw_ctx_t *ctx, int cx, int cy, lv_color_t c) {
-    drawLine(ctx, c, 2, cx - 4, cy - 12, cx - 4, cy - 6);   // chân cắm
-    drawLine(ctx, c, 2, cx + 4, cy - 12, cx + 4, cy - 6);
-    lv_draw_rect_dsc_t d;
-    lv_draw_rect_dsc_init(&d);
-    d.bg_opa = LV_OPA_TRANSP;
-    d.border_color = c;
-    d.border_width = 2;
-    d.radius = 4;
-    lv_area_t body = {(lv_coord_t)(cx - 8), (lv_coord_t)(cy - 6), (lv_coord_t)(cx + 8), (lv_coord_t)(cy + 4)};
-    lv_draw_rect(ctx, &d, &body);
-    drawLine(ctx, c, 2, cx, cy + 4, cx, cy + 12);           // dây
-}
-
-void iconLeaf(lv_draw_ctx_t *ctx, int cx, int cy, bool mirror, lv_color_t c) {
-    int s = mirror ? -1 : 1;
-    drawLine(ctx, c, 9, cx - 4 * s, cy + 4, cx + 4 * s, cy - 4);
-    drawLine(ctx, lv_color_hex(0x07142A), 1, cx - 5 * s, cy + 5, cx + 3 * s, cy - 3);
-}
-
+// ---------------------------------------------------------------- logo
 void drawChevron(lv_draw_ctx_t *ctx, int x, int y, int w, int h, int stroke) {
     lv_color_t c = lv_color_hex(0xE8EEF6);
     lv_point_t outer[3] = {{(lv_coord_t)x, (lv_coord_t)y},
@@ -202,48 +153,6 @@ void drawChevron(lv_draw_ctx_t *ctx, int x, int y, int w, int h, int stroke) {
                            {(lv_coord_t)(x + w * 0.78f), (lv_coord_t)y}};
     drawPolyline(ctx, c, stroke, outer, 3);
     drawPolyline(ctx, c, stroke, inner, 3);
-}
-
-// Hình xe máy điện cách điệu, căn giữa tại (cx, cy)
-void drawScooter(lv_draw_ctx_t *ctx, int cx, int cy) {
-    const float s = 0.9f;
-    const int ox = cx - (int)(69 * s), oy = cy - (int)(56 * s);
-    auto X = [&](float v) { return (int)(ox + v * s); };
-    auto Y = [&](float v) { return (int)(oy + v * s); };
-
-    lv_color_t blue = lv_color_hex(0x3D8BFF);
-    lv_color_t light = lv_color_hex(0xDDE8FF);
-
-    lv_draw_rect_dsc_t d;
-    lv_draw_rect_dsc_init(&d);
-    d.radius = (lv_coord_t)(12 * s);
-    d.bg_opa = LV_OPA_COVER;
-    d.bg_color = light;
-    d.bg_grad.dir = LV_GRAD_DIR_VER;
-    d.bg_grad.stops_count = 2;
-    d.bg_grad.stops[0].color = light;
-    d.bg_grad.stops[0].frac = 0;
-    d.bg_grad.stops[1].color = blue;
-    d.bg_grad.stops[1].frac = 255;
-    lv_area_t body = {(lv_coord_t)X(14), (lv_coord_t)Y(46), (lv_coord_t)X(96), (lv_coord_t)Y(70)};
-    lv_draw_rect(ctx, &d, &body);
-
-    lv_draw_rect_dsc_t seat;
-    lv_draw_rect_dsc_init(&seat);
-    seat.radius = 5;
-    seat.bg_opa = LV_OPA_COVER;
-    seat.bg_color = light;
-    lv_area_t seatA = {(lv_coord_t)X(44), (lv_coord_t)Y(34), (lv_coord_t)X(80), (lv_coord_t)Y(44)};
-    lv_draw_rect(ctx, &seat, &seatA);
-
-    drawLine(ctx, blue, 6, X(94), Y(68), X(112), Y(22));     // cổ lái
-    drawLine(ctx, light, 6, X(104), Y(20), X(124), Y(17));   // tay lái
-    drawLine(ctx, blue, 5, X(112), Y(24), X(122), Y(64));    // phuộc trước
-
-    drawRing(ctx, X(28), Y(78), (int)(17 * s), 6, blue);
-    drawRing(ctx, X(122), Y(78), (int)(17 * s), 6, blue);
-    drawCircle(ctx, X(28), Y(78), 4, light, LV_OPA_COVER);
-    drawCircle(ctx, X(122), Y(78), 4, light, LV_OPA_COVER);
 }
 
 // ---------------------------------------------------------------- lớp vẽ
@@ -276,7 +185,7 @@ void drawBack(lv_event_t *e) {
     }
 }
 
-// Lớp trước: nằm trên các ô thẻ, dưới chữ số
+// Lớp trước: nằm trên các ô thẻ (logo, vòng tròn bao icon, vạch chia); icon là chữ trong font icon
 void drawFront(lv_event_t *e) {
     lv_draw_ctx_t *ctx = lv_event_get_draw_ctx(e);
     lv_color_t cardBg = lv_color_hex(0x0A1830);
@@ -284,19 +193,14 @@ void drawFront(lv_event_t *e) {
     // logo đầu màn
     drawChevron(ctx, 24, 18, 34, 26, 3);
 
-    // ô hình xe
-    drawScooter(ctx, CARD_BIKE.x + CARD_BIKE.w / 2, CARD_BIKE.cy());
+    // quầng sáng sau hình xe
+    drawCircle(ctx, CARD_BIKE.x + CARD_BIKE.w / 2, CARD_BIKE.cy() + 8, 56, cBlue(), 30);
 
-    // ô bên phải: icon trong vòng tròn
-    for (int i = 0; i < 3; i++) neonRing(ctx, 600, CARD_R[i].cy(), 20, 2, cCyan(), cardBg);
-    iconRoad(ctx, 600, CARD_R[0].cy(), cCyan());
-    iconRoad(ctx, 600, CARD_R[1].cy(), cCyan());
-    iconThermo(ctx, 600, CARD_R[2].cy(), cCyan());
-
-    // ô dưới: tia sét, logo giữa, vạch chia, điện áp & dòng điện
+    // vòng tròn neon bao icon
+    for (int i = 0; i < 3; i++) neonRing(ctx, 600, CARD_R[i].cy(), 21, 2, cCyan(), cardBg);
     neonRing(ctx, 52, CARD_BOTTOM.cy(), 22, 2, cCyan(), cardBg);
-    iconBolt(ctx, 52, CARD_BOTTOM.cy(), 1.2f, cCyan());
 
+    // logo giữa ô dưới + vạch chia
     drawChevron(ctx, 383, 352, 44, 34, 3);
 
     lv_draw_rect_dsc_t div;
@@ -305,14 +209,6 @@ void drawFront(lv_event_t *e) {
     div.bg_color = lv_color_hex(0x2A5AA8);
     lv_area_t divA = {488, 356, 489, 428};
     lv_draw_rect(ctx, &div, &divA);
-
-    iconPlug(ctx, VA_ICON_X, VA_ROW_Y[0], cCyan());
-    drawRing(ctx, VA_ICON_X, VA_ROW_Y[1], 12, 2, cCyan());
-    iconBolt(ctx, VA_ICON_X, VA_ROW_Y[1], 0.65f, cCyan());
-
-    // khẩu hiệu cuối màn
-    iconLeaf(ctx, 292, 466, false, cCyan());
-    iconLeaf(ctx, 508, 466, true, cCyan());
 }
 
 // ---------------------------------------------------------------- widget
@@ -322,7 +218,7 @@ lv_obj_t *speedLbl, *arcMain, *arcGlow;
 lv_obj_t *socLbl, *battBox, *battNub, *battSeg[5];
 lv_obj_t *odoLbl, *tripLbl, *tempLbl;
 lv_obj_t *rangeLbl, *voltLbl, *currLbl;
-lv_obj_t *modeBtn, *modeLbl;
+lv_obj_t *modeBtn, *modeLbl, *modeIcon;
 lv_obj_t *bmsDot, *clockLbl;
 
 int lastBattLevel = -1;
@@ -340,6 +236,33 @@ lv_obj_t *makeLabel(lv_obj_t *parent, const lv_font_t *f, lv_color_t c, const ch
 
 void placeCenter(lv_obj_t *o, int cx, int cy) { lv_obj_align(o, LV_ALIGN_CENTER, cx - W / 2, cy - H / 2); }
 void placeLeft(lv_obj_t *o, int x, int cy) { lv_obj_align(o, LV_ALIGN_LEFT_MID, x, cy - H / 2); }
+
+// Mã Unicode → chuỗi UTF-8 (icon Material Symbols nằm trong vùng 0xE000–0xFFFF)
+void utf8(uint32_t cp, char out[5]) {
+    if (cp < 0x80) {
+        out[0] = (char)cp;
+        out[1] = 0;
+    } else if (cp < 0x800) {
+        out[0] = (char)(0xC0 | (cp >> 6));
+        out[1] = (char)(0x80 | (cp & 0x3F));
+        out[2] = 0;
+    } else {
+        out[0] = (char)(0xE0 | (cp >> 12));
+        out[1] = (char)(0x80 | ((cp >> 6) & 0x3F));
+        out[2] = (char)(0x80 | (cp & 0x3F));
+        out[3] = 0;
+    }
+}
+
+lv_obj_t *makeIcon(lv_obj_t *parent, const lv_font_t *f, uint32_t cp, lv_color_t c) {
+    char s[5];
+    utf8(cp, s);
+    lv_obj_t *l = lv_label_create(parent);
+    lv_obj_set_style_text_font(l, f, 0);
+    lv_obj_set_style_text_color(l, c, 0);
+    lv_label_set_text(l, s);
+    return l;
+}
 
 lv_obj_t *makeBox(lv_obj_t *parent) {
     lv_obj_t *o = lv_obj_create(parent);
@@ -462,7 +385,7 @@ void uiCreate(ModeTapHandler onModeTap) {
     lv_obj_set_flex_flow(status, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(status, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(status, 8, 0);
-    makeLabel(status, &lv_font_montserrat_20, cBlue(), LV_SYMBOL_BLUETOOTH);
+    makeIcon(status, &font_icons_20, ICON_BLUETOOTH, cBlue());
     bmsDot = makeBox(status);
     lv_obj_set_size(bmsDot, 10, 10);
     lv_obj_set_style_radius(bmsDot, LV_RADIUS_CIRCLE, 0);
@@ -523,9 +446,26 @@ void uiCreate(ModeTapHandler onModeTap) {
     lv_obj_set_style_bg_opa(modeBtn, 40, 0);
     lv_obj_set_ext_click_area(modeBtn, 20);
     lv_obj_add_event_cb(modeBtn, onModeClicked, LV_EVENT_CLICKED, NULL);
+    lv_obj_set_flex_flow(modeBtn, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(modeBtn, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(modeBtn, 4, 0);
+    modeIcon = makeIcon(modeBtn, &font_icons_20, ICON_ECO, cGreen());
     modeLbl = makeLabel(modeBtn, &font_mid_22, cGreen(), "ECO");
-    lv_obj_center(modeLbl);
     placeCenter(modeBtn, GX, 284);
+
+    // --- icon (Material Symbols)
+    lv_color_t iconColor = cCyan();
+    const uint32_t rightIcons[3] = {ICON_ODO, ICON_TRIP, ICON_THERMOMETER};
+    for (int i = 0; i < 3; i++) {
+        placeCenter(makeIcon(scr, &font_icons_28, rightIcons[i], iconColor), 600, CARD_R[i].cy());
+    }
+    placeCenter(makeIcon(scr, &font_icons_28, ICON_BOLT, iconColor), 52, CARD_BOTTOM.cy());
+    placeCenter(makeIcon(scr, &font_icons_28, ICON_PLUG, iconColor), VA_ICON_X, VA_ROW_Y[0]);
+    placeCenter(makeIcon(scr, &font_icons_28, ICON_BOLT_CIRCLE, iconColor), VA_ICON_X, VA_ROW_Y[1]);
+    placeCenter(makeIcon(scr, &font_icon_96, ICON_SCOOTER, lv_color_hex(0x8EC5FF)),
+                CARD_BIKE.x + CARD_BIKE.w / 2, CARD_BIKE.cy());
+    placeCenter(makeIcon(scr, &font_icons_20, ICON_ECO, iconColor), 290, 466);
+    placeCenter(makeIcon(scr, &font_icons_20, ICON_ECO, iconColor), 510, 466);
 
     // --- ô bên phải
     makeStat(scr, 632, CARD_R[0].cy(), "ODO", "km", &odoLbl);
@@ -604,6 +544,12 @@ void uiUpdate(const VehicleState &s, bool bmsConnected) {
         lv_color_t c = lv_color_hex(modeColorHex(s.mode));
         setText(modeLbl, modeTitle(s.mode));
         lv_obj_set_style_text_color(modeLbl, c, 0);
+        lv_obj_set_style_text_color(modeIcon, c, 0);
+        if (s.mode == DriveMode::Eco) {
+            lv_obj_clear_flag(modeIcon, LV_OBJ_FLAG_HIDDEN);   // lá chỉ hiện ở chế độ ECO
+        } else {
+            lv_obj_add_flag(modeIcon, LV_OBJ_FLAG_HIDDEN);
+        }
         lv_obj_set_style_border_color(modeBtn, c, 0);
         lv_obj_set_style_bg_color(modeBtn, c, 0);
     }

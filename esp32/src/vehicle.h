@@ -27,6 +27,9 @@ class VehicleSimulator {
 public:
     void step(float dt);
     void setMode(DriveMode mode);
+    // Ghi số liệu pin thật từ BMS (NAN = không có → giữ giá trị giả lập).
+    // Trường nào đã có dữ liệu thật thì step() không tự tính lại nữa.
+    void setBattery(float soc, float voltage, float current, float temp);
     const VehicleState &state() const { return s_; }
 
 private:
@@ -34,4 +37,5 @@ private:
     float elapsed_ = 0;
     float targetSpeed_ = 32;
     float nextChange_ = 6;
+    bool extSoc_ = false, extPack_ = false, extTemp_ = false;
 };

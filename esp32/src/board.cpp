@@ -15,7 +15,8 @@ constexpr int PIN_TOUCH_INT = 4;
 // CH422G: ghi 0x01 vào địa chỉ 0x24 để bật chế độ output, ghi trạng thái chân vào 0x38
 constexpr uint8_t CH422G_MODE = 0x24;
 constexpr uint8_t CH422G_OUT = 0x38;
-// Bit: EXIO1 = reset cảm ứng, EXIO2 = đèn nền, EXIO3 = reset LCD, EXIO5 = chọn USB
+// Bit: EXIO1 = reset cảm ứng, EXIO2 = đèn nền, EXIO3 = reset LCD,
+//      EXIO5 = USB_SEL (1 = GPIO19/20 nối vào bộ thu phát CAN cho bms.cpp, 0 = cổng USB gốc)
 constexpr uint8_t EXIO_TOUCH_IN_RESET = 0x2C;
 constexpr uint8_t EXIO_RUN = 0x2E;
 

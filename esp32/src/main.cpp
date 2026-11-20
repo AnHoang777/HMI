@@ -1,9 +1,12 @@
 // Bảng đồng hồ xe máy điện – Waveshare ESP32-S3-Touch-LCD-4.3
-// Hiện tại chạy dữ liệu giả lập; chạm vào nút ECO để đổi chế độ lái.
+// SOC, điện áp, dòng điện, nhiệt độ pin đọc từ BMS qua CAN (bms.cpp);
+// tốc độ/ODO/TRIP chưa có nguồn thật nên vẫn giả lập. Chạm nút ECO để đổi chế độ lái.
 #include <Arduino.h>
 #include <esp_heap_caps.h>
 #include <lvgl.h>
+#include <math.h>
 
+#include "bms.h"
 #include "board.h"
 #include "ui.h"
 #include "vehicle.h"
@@ -67,6 +70,8 @@ void setup() {
     indevDrv.read_cb = touchCb;
     lv_indev_drv_register(&indevDrv);
 
+    bmsBegin();
+
     uiCreate(onModeTap);
     uiUpdate(sim.state(), false);
 }
@@ -75,10 +80,17 @@ void loop() {
     static uint32_t lastStep = 0;
     const uint32_t now = millis();
 
+    bmsPoll();
+
     if (now - lastStep >= 100) {
         lastStep = now;
+        const BmsData &b = bmsData();
+        sim.setBattery(b.socValid ? b.soc : NAN,
+                       b.packValid ? b.voltage : NAN,
+                       b.packValid ? b.current : NAN,
+                       b.tempValid ? b.batteryTemp() : NAN);
         sim.step(0.1f);
-        uiUpdate(sim.state(), false);
+        uiUpdate(sim.state(), bmsOnline());
     }
 
     lv_timer_handler();

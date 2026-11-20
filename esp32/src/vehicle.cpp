@@ -70,6 +70,18 @@ void VehicleSimulator::setMode(DriveMode mode) {
     targetSpeed_ = fminf(targetSpeed_, maxSpeed(mode));
 }
 
+void VehicleSimulator::setBattery(float soc, float voltage, float current, float temp) {
+    extSoc_ = !isnan(soc);
+    extPack_ = !isnan(voltage) && !isnan(current);
+    extTemp_ = !isnan(temp);
+    if (extSoc_) s_.soc = soc;
+    if (extPack_) {
+        s_.voltage = voltage;
+        s_.current = current;
+    }
+    if (extTemp_) s_.batteryTemp = temp;
+}
+
 void VehicleSimulator::step(float dt) {
     elapsed_ += dt;
 
@@ -97,19 +109,21 @@ void VehicleSimulator::step(float dt) {
     } else {
         current = 0.6f + 0.09f * v + 0.0025f * v * v + fmaxf(accel, 0) * 3 + frandRange(-0.15f, 0.15f);
     }
-    s_.current = current;
-
-    s_.soc = clampf(s_.soc - current * dt / 3600 / CAPACITY_AH * 100, 0, 100);
-
-    const float cellOcv = 3.40f + 0.82f * s_.soc / 100;
-    s_.voltage = cellOcv * CELLS - current * R_INTERNAL;
+    if (!extPack_) s_.current = current;
+    if (!extSoc_) s_.soc = clampf(s_.soc - current * dt / 3600 / CAPACITY_AH * 100, 0, 100);
+    if (!extPack_) {
+        const float cellOcv = 3.40f + 0.82f * s_.soc / 100;
+        s_.voltage = cellOcv * CELLS - current * R_INTERNAL;
+    }
 
     const float km = v * dt / 3600;
     s_.odo += km;
     s_.trip += km;
 
-    const float equilibrium = 27 + current * current * 0.004f;
-    s_.batteryTemp += (equilibrium - s_.batteryTemp) * dt / 90;
+    if (!extTemp_) {
+        const float equilibrium = 27 + current * current * 0.004f;
+        s_.batteryTemp += (equilibrium - s_.batteryTemp) * dt / 90;
+    }
 
     const float remainingWh = s_.soc / 100 * CAPACITY_AH * NOMINAL_V * s_.soh / 100;
     s_.range = remainingWh / consumptionWhPerKm(s_.mode);

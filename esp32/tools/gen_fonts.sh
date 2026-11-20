@@ -9,7 +9,7 @@ OUT=src/fonts
 mkdir -p "$TTF" "$OUT"
 
 BASE=https://raw.githubusercontent.com/google/fonts/main/ofl/bevietnampro
-for f in ExtraBold Bold SemiBold Medium BlackItalic; do
+for f in ExtraBold Bold SemiBold Medium MediumItalic; do
   [ -f "$TTF/BeVietnamPro-$f.ttf" ] || curl -fsSL -o "$TTF/BeVietnamPro-$f.ttf" "$BASE/BeVietnamPro-$f.ttf"
 done
 
@@ -31,9 +31,10 @@ conv() {
   echo "  $name.c ($(wc -c < "$OUT/$name.c") bytes)"
 }
 
-conv BeVietnamPro-ExtraBold.ttf   120 font_speed_120 --symbols "0123456789-"
-conv BeVietnamPro-BlackItalic.ttf  54 font_soc_54    --symbols "0123456789%-"
-conv BeVietnamPro-ExtraBold.ttf    46 font_range_46  --symbols "0123456789-"
-conv BeVietnamPro-Bold.ttf         32 font_value_32  --range "0x20-0x7E,0xB0"
-conv BeVietnamPro-SemiBold.ttf     24 font_mid_24    --range "$VN"
-conv BeVietnamPro-Medium.ttf       18 font_label_18  --range "$VN"
+conv BeVietnamPro-ExtraBold.ttf    104 font_speed_104 --symbols "0123456789-"
+conv BeVietnamPro-Bold.ttf          44 font_soc_44    --symbols "0123456789%-"
+conv BeVietnamPro-ExtraBold.ttf     44 font_range_44  --symbols "0123456789-"
+conv BeVietnamPro-Bold.ttf          26 font_value_26  --range "0x20-0x7E,0xB0"
+conv BeVietnamPro-SemiBold.ttf      22 font_mid_22    --range "$VN"
+conv BeVietnamPro-Medium.ttf        16 font_label_16  --range "$VN"
+conv BeVietnamPro-MediumItalic.ttf  16 font_italic_16 --range "$VN"

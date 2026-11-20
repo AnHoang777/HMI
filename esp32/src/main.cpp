@@ -68,7 +68,7 @@ void setup() {
     lv_indev_drv_register(&indevDrv);
 
     uiCreate(onModeTap);
-    uiUpdate(sim.state());
+    uiUpdate(sim.state(), false);
 }
 
 void loop() {
@@ -78,7 +78,7 @@ void loop() {
     if (now - lastStep >= 100) {
         lastStep = now;
         sim.step(0.1f);
-        uiUpdate(sim.state());
+        uiUpdate(sim.state(), false);
     }
 
     lv_timer_handler();

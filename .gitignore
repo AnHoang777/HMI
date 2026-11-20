@@ -7,3 +7,8 @@ Payload/
 xcuserdata/
 Config/*-Info.plist
 Config/*.entitlements
+
+# ESP32
+esp32/.pio/
+esp32/.fonts/
+esp32/src/fonts/*.c

@@ -3,6 +3,9 @@ name: Build iOS
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'esp32/**'
+      - '.github/workflows/esp32.yml'
   pull_request:
   workflow_dispatch:
 

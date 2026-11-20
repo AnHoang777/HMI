@@ -45,3 +45,21 @@ open HMI.xcodeproj
 - RX (write, iPhone → ESP32) `6E400002-…`: `{"cmd":"mode","value":"sport"}`
 
 Trường nào không gửi thì app giữ giá trị cũ. Chọn nguồn dữ liệu trong app bằng nút lưới ở góc dưới bên trái.
+
+## Đồng hồ ESP32 (Waveshare ESP32-S3-Touch-LCD-4.3)
+
+Thư mục `esp32/` chứa firmware PlatformIO (Arduino + LVGL 8.3) vẽ cùng giao diện neon trên màn 800×480.
+
+- `src/board.cpp`: driver màn RGB, cảm ứng GT911, IO expander CH422G
+- `src/ui.cpp`: giao diện (thanh pin 5 vạch nhiều màu, không có CarPlay)
+- `src/vehicle.cpp`: dữ liệu giả lập (cùng mô hình với app iOS)
+- `tools/gen_fonts.sh`: tạo font tiếng Việt (Be Vietnam Pro) cho LVGL
+
+GitHub Actions (`.github/workflows/esp32.yml`) build ra artifact `HMI-esp32`:
+
+- `HMI-esp32-full.bin`: nạp ở địa chỉ **0x0** (bootloader + phân vùng + app)
+- `HMI-esp32-app.bin`: chỉ phần app, nạp ở **0x10000** khi cập nhật
+
+Nạp bằng trình duyệt Chrome/Edge: https://espressif.github.io/esptool-js/ → Connect → chọn file `HMI-esp32-full.bin`, địa chỉ `0x0` → Program.
+
+Nguồn: Type-C 5V khi nạp/chạy thử, cổng DC 7–36V khi gắn lên xe (lấy 12V sau khoá, **không** đấu vào pin chính).

@@ -1,0 +1,55 @@
+name: Build ESP32
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'esp32/**'
+      - '.github/workflows/esp32.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate fonts (Be Vietnam Pro -> LVGL)
+        run: bash esp32/tools/gen_fonts.sh
+
+      - name: Install PlatformIO + esptool
+        run: pip install -U platformio "esptool<5"
+
+      - name: Build firmware
+        working-directory: esp32
+        run: pio run -e waveshare_s3_lcd43
+
+      - name: Merge into single flashable image
+        working-directory: esp32
+        run: |
+          B=.pio/build/waveshare_s3_lcd43
+          APP0=$(find ~/.platformio/packages -name boot_app0.bin | head -1)
+          echo "boot_app0: $APP0"
+          python -m esptool --chip esp32s3 merge_bin -o ../HMI-esp32-full.bin \
+            0x0 $B/bootloader.bin \
+            0x8000 $B/partitions.bin \
+            0xe000 "$APP0" \
+            0x10000 $B/firmware.bin
+          cp $B/firmware.bin ../HMI-esp32-app.bin
+          ls -la ../HMI-esp32-*.bin
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: HMI-esp32
+          path: |
+            HMI-esp32-full.bin
+            HMI-esp32-app.bin

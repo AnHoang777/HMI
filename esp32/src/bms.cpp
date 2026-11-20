@@ -6,10 +6,9 @@
 
 namespace {
 
-// Waveshare ESP32-S3-Touch-LCD-4.3: bộ thu phát CAN nối GPIO20 (TX) / GPIO19 (RX),
-// dùng chung chân với USB gốc – CH422G EXIO5 (USB_SEL) = 1 để chuyển sang CAN (xem board.cpp).
-constexpr gpio_num_t CAN_TX_PIN = GPIO_NUM_20;
-constexpr gpio_num_t CAN_RX_PIN = GPIO_NUM_19;
+// Waveshare ESP32-S3-Touch-LCD-4.3: bộ thu phát CAN nối GPIO15 (TX) / GPIO16 (RX)
+constexpr gpio_num_t CAN_TX_PIN = GPIO_NUM_15;
+constexpr gpio_num_t CAN_RX_PIN = GPIO_NUM_16;
 
 constexpr float VOLTAGE_SCALE_V_PER_COUNT = 0.002f;
 constexpr float CURRENT_SCALE_A_PER_COUNT = 0.02f;

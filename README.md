@@ -52,10 +52,10 @@ Thư mục `esp32/` chứa firmware PlatformIO (Arduino + LVGL 8.3) vẽ cùng g
 
 - `src/board.cpp`: driver màn RGB, cảm ứng GT911, IO expander CH422G
 - `src/ui.cpp`: giao diện (thanh pin 5 vạch nhiều màu, không có CarPlay)
-- `src/bms.cpp`: đọc BMS qua CAN 250 kbps (GPIO20 TX / GPIO19 RX, chỉ nghe, không gửi): SOC, điện áp, dòng điện, nhiệt độ pin – cùng bảng giải mã với firmware sạc `code_sac`
+- `src/bms.cpp`: đọc BMS qua CAN 250 kbps (GPIO15 TX / GPIO16 RX, chỉ nghe, không gửi): SOC, điện áp, dòng điện, nhiệt độ pin – cùng bảng giải mã với firmware sạc `code_sac`
 - `src/vehicle.cpp`: dữ liệu giả lập cho tốc độ/ODO/TRIP; SOC, điện áp, dòng, nhiệt độ lấy từ BMS khi có
 
-Đấu dây CAN: CANH/CANL của BMS vào cổng CAN trên board (chung GND). Vì GPIO19/20 được chuyển sang CAN nên cổng USB gốc không dùng được khi firmware chạy – nạp và xem log qua cổng **UART** (115200).
+Đấu dây CAN: CANH/CANL của BMS vào cổng CAN trên board (chung GND). Log BMS in ra Serial 115200 mỗi 2 giây.
 - `tools/gen_fonts.sh`: tạo font tiếng Việt (Be Vietnam Pro) cho LVGL
 
 GitHub Actions (`.github/workflows/esp32.yml`) build ra artifact `HMI-esp32`:

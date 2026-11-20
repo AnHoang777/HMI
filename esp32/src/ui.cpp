@@ -483,13 +483,25 @@ void uiCreate(ModeTapHandler onModeTap) {
     placeCenter(slogan, GX, 466);
 }
 
+// Giá trị NAN = chưa có dữ liệu → hiện "--"
+static void setNum(lv_obj_t *lbl, const char *fmt, float v, bool asInt = false) {
+    char buf[24];
+    if (isnan(v)) {
+        setText(lbl, "--");
+        return;
+    }
+    if (asInt) snprintf(buf, sizeof(buf), fmt, (int)lroundf(v));
+    else snprintf(buf, sizeof(buf), fmt, v);
+    setText(lbl, buf);
+}
+
 void uiUpdate(const VehicleState &s, bool bmsConnected) {
     char buf[32];
 
     // tốc độ
-    snprintf(buf, sizeof(buf), "%d", (int)lroundf(s.speed));
-    setText(speedLbl, buf);
-    int arcVal = (int)lroundf(fminf(fmaxf(s.speed, 0), MAX_SPEED) * 10);
+    setNum(speedLbl, "%d", s.speed, true);
+    const float spd = isnan(s.speed) ? 0 : s.speed;
+    int arcVal = (int)lroundf(fminf(fmaxf(spd, 0), MAX_SPEED) * 10);
     if (lv_arc_get_value(arcMain) != arcVal) {
         lv_arc_set_value(arcGlowWide, arcVal);
         lv_arc_set_value(arcGlow, arcVal);
@@ -498,9 +510,8 @@ void uiUpdate(const VehicleState &s, bool bmsConnected) {
     }
 
     // SOC + cột pin 5 vạch (mỗi vạch 20%)
-    snprintf(buf, sizeof(buf), "%d%%", (int)lroundf(s.soc));
-    setText(socLbl, buf);
-    int level = (int)ceilf(s.soc / 20.0f);
+    setNum(socLbl, "%d%%", s.soc, true);
+    int level = isnan(s.soc) ? 0 : (int)ceilf(s.soc / 20.0f);
     if (level < 0) level = 0;
     if (level > 5) level = 5;
     if (level != lastBattLevel) {
@@ -515,24 +526,23 @@ void uiUpdate(const VehicleState &s, bool bmsConnected) {
     }
 
     // ODO kiểu Việt Nam: 12.450
-    long odo = (long)s.odo;
-    if (odo >= 1000) {
-        snprintf(buf, sizeof(buf), "%ld.%03ld", odo / 1000, odo % 1000);
+    if (isnan(s.odo)) {
+        setText(odoLbl, "--");
     } else {
-        snprintf(buf, sizeof(buf), "%ld", odo);
+        long odo = (long)s.odo;
+        if (odo >= 1000) {
+            snprintf(buf, sizeof(buf), "%ld.%03ld", odo / 1000, odo % 1000);
+        } else {
+            snprintf(buf, sizeof(buf), "%ld", odo);
+        }
+        setText(odoLbl, buf);
     }
-    setText(odoLbl, buf);
-    snprintf(buf, sizeof(buf), "%.1f", s.trip);
-    setText(tripLbl, buf);
-    snprintf(buf, sizeof(buf), "%d", (int)lroundf(s.batteryTemp));
-    setText(tempLbl, buf);
+    setNum(tripLbl, "%.1f", s.trip);
+    setNum(tempLbl, "%d", s.batteryTemp, true);
 
-    snprintf(buf, sizeof(buf), "%d", (int)lroundf(s.range));
-    setText(rangeLbl, buf);
-    snprintf(buf, sizeof(buf), "%.2f", s.voltage);
-    setText(voltLbl, buf);
-    snprintf(buf, sizeof(buf), "%.2f", s.current);
-    setText(currLbl, buf);
+    setNum(rangeLbl, "%d", s.range, true);
+    setNum(voltLbl, "%.2f", s.voltage);
+    setNum(currLbl, "%.2f", s.current);
 
     // chế độ lái
     if ((int)s.mode != lastMode) {

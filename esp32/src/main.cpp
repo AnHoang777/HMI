@@ -1,6 +1,7 @@
 // Bảng đồng hồ xe máy điện – Waveshare ESP32-S3-Touch-LCD-4.3
-// SOC, điện áp, dòng điện, nhiệt độ pin đọc từ BMS qua CAN (bms.cpp);
-// tốc độ/ODO/TRIP chưa có nguồn thật nên vẫn giả lập. Chạm nút ECO để đổi chế độ lái.
+// SOC, điện áp, dòng điện, nhiệt độ pin đọc từ BMS qua CAN (bms.cpp).
+// Không có dữ liệu thật thì hiện "--". Đặt DEMO_SIMULATION = true để chạy số liệu giả lập.
+// Chạm nút ECO để đổi chế độ lái.
 #include <Arduino.h>
 #include <esp_heap_caps.h>
 #include <lvgl.h>
@@ -14,6 +15,23 @@
 namespace {
 
 constexpr size_t DRAW_LINES = 40;
+constexpr bool DEMO_SIMULATION = false;   // true = chạy dữ liệu giả lập để trưng bày
+
+// Trạng thái hiển thị chỉ gồm dữ liệu thật; NAN = chưa có
+VehicleState realState() {
+    VehicleState s;
+    const BmsData &b = bmsData();
+    s.speed = NAN;          // chưa có nguồn tốc độ
+    s.odo = NAN;
+    s.trip = NAN;
+    s.range = NAN;
+    s.soh = b.sohValid ? b.soh : NAN;
+    s.soc = b.socValid ? b.soc : NAN;
+    s.voltage = b.packValid ? b.voltage : NAN;
+    s.current = b.packValid ? b.current : NAN;
+    s.batteryTemp = b.tempValid ? b.batteryTemp() : NAN;
+    return s;
+}
 
 lv_disp_draw_buf_t drawBuf;
 lv_disp_drv_t dispDrv;
@@ -73,7 +91,7 @@ void setup() {
     bmsBegin();
 
     uiCreate(onModeTap);
-    uiUpdate(sim.state(), false);
+    uiUpdate(DEMO_SIMULATION ? sim.state() : realState(), false);
 }
 
 void loop() {
@@ -84,13 +102,14 @@ void loop() {
 
     if (now - lastStep >= 100) {
         lastStep = now;
-        const BmsData &b = bmsData();
-        sim.setBattery(b.socValid ? b.soc : NAN,
-                       b.packValid ? b.voltage : NAN,
-                       b.packValid ? b.current : NAN,
-                       b.tempValid ? b.batteryTemp() : NAN);
-        sim.step(0.1f);
-        uiUpdate(sim.state(), bmsOnline());
+        if (DEMO_SIMULATION) {
+            sim.step(0.1f);
+            uiUpdate(sim.state(), bmsOnline());
+        } else {
+            VehicleState s = realState();
+            s.mode = sim.state().mode;    // chế độ lái do người dùng chọn
+            uiUpdate(s, bmsOnline());
+        }
     }
 
     lv_timer_handler();

@@ -72,8 +72,8 @@ lv_color_t bgAt(int y) {
 // ---------------------------------------------------------------- hình học tĩnh
 lv_point_t headerPts[6] = {{14, 58}, {236, 58}, {256, 44}, {544, 44}, {564, 58}, {786, 58}};
 lv_point_t topPts[6] = {{40, 6}, {250, 6}, {266, 18}, {534, 18}, {550, 6}, {760, 6}};
-lv_point_t footL[3] = {{14, 448}, {30, 466}, {300, 466}};
-lv_point_t footR[3] = {{500, 466}, {770, 466}, {786, 448}};
+lv_point_t footL[3] = {{14, 448}, {30, 466}, {272, 466}};
+lv_point_t footR[3] = {{528, 466}, {770, 466}, {786, 448}};
 
 // ---------------------------------------------------------------- vẽ cơ bản
 void drawLine(lv_draw_ctx_t *ctx, lv_color_t c, int w, int x1, int y1, int x2, int y2) {
@@ -311,8 +311,8 @@ void drawFront(lv_event_t *e) {
     iconBolt(ctx, VA_ICON_X, VA_ROW_Y[1], 0.65f, cCyan());
 
     // khẩu hiệu cuối màn
-    iconLeaf(ctx, 318, 466, false, cCyan());
-    iconLeaf(ctx, 482, 466, true, cCyan());
+    iconLeaf(ctx, 292, 466, false, cCyan());
+    iconLeaf(ctx, 508, 466, true, cCyan());
 }
 
 // ---------------------------------------------------------------- widget

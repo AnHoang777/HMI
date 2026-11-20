@@ -23,16 +23,17 @@ constexpr int G_W = 16;    // độ dày cung
 constexpr int MAX_SPEED = 80;
 constexpr int TICK_R = 116;
 
-// Cột trái
+// Cột trái: SOC + thanh pin
 constexpr int LX = 30;
-constexpr int BATT_X = 30, BATT_Y = 146, BATT_W = 170, BATT_H = 46;
-constexpr int LROW_Y[3] = {214, 256, 298};
-constexpr int LICON_X = 44;
+constexpr int SOC_TITLE_Y = 118;
+constexpr int SOC_VALUE_Y = 164;
+constexpr int BATT_X = 30, BATT_Y = 200, BATT_W = 180, BATT_H = 50;
 
-// Cột phải
+// Cột phải: ODO, TRIP, nhiệt độ pin
 constexpr int RX = 616;
 constexpr int RICON_X = 584;
-constexpr int RROW_Y[4] = {90, 156, 222, 288};
+constexpr int RROWS = 3;
+constexpr int RROW_Y[RROWS] = {110, 190, 270};
 
 // Thanh pin 5 vạch: đỏ → cam → vàng → xanh nõn chuối → xanh lá
 constexpr uint32_t SEG_COLORS[5] = {0xFF3B3B, 0xFF8A1C, 0xFFD21C, 0xA6F23D, 0x3DF26A};
@@ -42,7 +43,6 @@ const char *RANGE_TEXT = "Ước tính còn đi được";
 inline lv_color_t cCyan() { return lv_color_hex(0x19E0FF); }
 inline lv_color_t cBlue() { return lv_color_hex(0x1E6BFF); }
 inline lv_color_t cGreen() { return lv_color_hex(0x3DF26A); }
-inline lv_color_t cAmber() { return lv_color_hex(0xFFB020); }
 inline lv_color_t cWhite() { return lv_color_white(); }
 
 // Màu nền (gradient dọc) tại toạ độ y – dùng để trộn màu "phát sáng" mà không cần độ trong suốt
@@ -160,24 +160,6 @@ void drawDivider(lv_draw_ctx_t *ctx, int x1, int x2, int y) {
 }
 
 // --- biểu tượng
-void iconBolt(lv_draw_ctx_t *ctx, int cx, int cy, float s, lv_color_t c) {
-    lv_point_t p[4] = {{(lv_coord_t)(cx + 3 * s), (lv_coord_t)(cy - 10 * s)},
-                       {(lv_coord_t)(cx - 5 * s), (lv_coord_t)(cy + 1 * s)},
-                       {(lv_coord_t)(cx + 5 * s), (lv_coord_t)(cy - 1 * s)},
-                       {(lv_coord_t)(cx - 3 * s), (lv_coord_t)(cy + 10 * s)}};
-    drawPolyline(ctx, c, (int)(3 * s + 0.5f), p, 4);
-}
-
-void iconEcg(lv_draw_ctx_t *ctx, int cx, int cy, float s, lv_color_t c, int w) {
-    const float pts[6][2] = {{-11, 0}, {-6, 0}, {-3, -8}, {1, 8}, {4, 0}, {11, 0}};
-    lv_point_t p[6];
-    for (int i = 0; i < 6; i++) {
-        p[i].x = (lv_coord_t)(cx + pts[i][0] * s);
-        p[i].y = (lv_coord_t)(cy + pts[i][1] * s);
-    }
-    drawPolyline(ctx, c, w, p, 6);
-}
-
 void iconRoad(lv_draw_ctx_t *ctx, int cx, int cy, lv_color_t c) {
     drawLine(ctx, c, 2, cx - 4, cy - 15, cx - 12, cy + 15);
     drawLine(ctx, c, 2, cx + 4, cy - 15, cx + 12, cy + 15);
@@ -314,21 +296,11 @@ void drawDecor(lv_event_t *e) {
     // logo
     drawChevron(ctx, logoX, 28, 32, 24);
 
-    // cột trái
-    lv_color_t iconLeft = lv_color_mix(cCyan(), cBlue(), 120);
-    iconBolt(ctx, LICON_X, LROW_Y[0], 1.1f, iconLeft);
-    iconEcg(ctx, LICON_X, LROW_Y[1], 1.0f, iconLeft, 2);
-    drawRing(ctx, LICON_X, LROW_Y[2], 12, 2, iconLeft);
-    iconBolt(ctx, LICON_X, LROW_Y[2], 0.6f, iconLeft);
-    drawDivider(ctx, LX, 246, (LROW_Y[0] + LROW_Y[1]) / 2);
-    drawDivider(ctx, LX, 246, (LROW_Y[1] + LROW_Y[2]) / 2);
-
     // cột phải
     iconRoad(ctx, RICON_X, RROW_Y[0], cCyan());
     iconRoad(ctx, RICON_X, RROW_Y[1], cCyan());
     iconThermo(ctx, RICON_X, RROW_Y[2], cCyan());
-    iconEcg(ctx, RICON_X, RROW_Y[3], 1.3f, cCyan(), 2);
-    for (int i = 0; i < 3; i++) drawDivider(ctx, 556, 784, (RROW_Y[i] + RROW_Y[i + 1]) / 2);
+    for (int i = 0; i < RROWS - 1; i++) drawDivider(ctx, 556, 784, (RROW_Y[i] + RROW_Y[i + 1]) / 2);
 
     // dưới
     iconPin(ctx, pinCx, 394, cCyan());
@@ -340,15 +312,12 @@ ModeTapHandler modeHandler = nullptr;
 
 lv_obj_t *speedLbl, *arcMain, *arcGlow;
 lv_obj_t *socLbl, *battBox, *battNub, *battSeg[5];
-lv_obj_t *voltLbl, *currLbl, *powerLbl;
-lv_obj_t *odoLbl, *tripLbl, *tempLbl, *sohLbl;
+lv_obj_t *odoLbl, *tripLbl, *tempLbl;
 lv_obj_t *rangeLbl;
 lv_obj_t *modeBtn, *modeLbl;
-lv_obj_t *statusDot, *statusLbl;
 
 int lastBattLevel = -1;
 int lastMode = -1;
-int lastLive = -1;
 
 lv_obj_t *makeLabel(lv_obj_t *parent, const lv_font_t *f, lv_color_t c, const char *text) {
     lv_obj_t *l = lv_label_create(parent);
@@ -476,11 +445,11 @@ void uiCreate(ModeTapHandler onModeTap) {
     lv_obj_t *rangeRow = makeValueRow(scr, &font_range_46, &font_mid_24, cGreen(), "km", 7, &rangeLbl);
     placeCenter(rangeRow, GX, 438);
 
-    // --- cột trái: SOC, pin, V/A/kW
+    // --- cột trái: SOC + thanh pin
     lv_obj_t *socTitle = makeLabel(scr, &font_mid_24, cCyan(), "SOC");
-    placeLeft(socTitle, LX, 70);
+    placeLeft(socTitle, LX, SOC_TITLE_Y);
     socLbl = makeLabel(scr, &font_soc_54, cWhite(), "--%");
-    placeLeft(socLbl, LX - 2, 114);
+    placeLeft(socLbl, LX - 2, SOC_VALUE_Y);
 
     battBox = makeBox(scr);
     lv_obj_set_pos(battBox, BATT_X, BATT_Y);
@@ -504,45 +473,19 @@ void uiCreate(ModeTapHandler onModeTap) {
     lv_obj_set_style_radius(battNub, 2, 0);
     lv_obj_set_style_bg_opa(battNub, LV_OPA_COVER, 0);
 
-    lv_obj_t *r;
-    r = makeValueRow(scr, &font_value_32, &font_label_18, cWhite(), "V", 5, &voltLbl);
-    placeLeft(r, 72, LROW_Y[0]);
-    r = makeValueRow(scr, &font_value_32, &font_label_18, cWhite(), "A", 5, &currLbl);
-    placeLeft(r, 72, LROW_Y[1]);
-    r = makeValueRow(scr, &font_value_32, &font_label_18, cWhite(), "kW", 5, &powerLbl);
-    placeLeft(r, 72, LROW_Y[2]);
-
-    // --- cột phải: ODO, TRIP, nhiệt độ pin, SOH
-    const char *titles[4] = {"ODO", "TRIP", "Nhiệt độ pin", "SOH"};
-    const char *units[4] = {"km", "km", "°C", "%"};
-    lv_obj_t **values[4] = {&odoLbl, &tripLbl, &tempLbl, &sohLbl};
-    for (int i = 0; i < 4; i++) {
+    // --- cột phải: ODO, TRIP, nhiệt độ pin
+    const char *titles[RROWS] = {"ODO", "TRIP", "Nhiệt độ pin"};
+    const char *units[RROWS] = {"km", "km", "°C"};
+    lv_obj_t **values[RROWS] = {&odoLbl, &tripLbl, &tempLbl};
+    for (int i = 0; i < RROWS; i++) {
         lv_obj_t *t = makeLabel(scr, &font_label_18, cCyan(), titles[i]);
         placeLeft(t, RX, RROW_Y[i] - 17);
-        r = makeValueRow(scr, &font_value_32, &font_label_18, cWhite(), units[i], 5, values[i]);
+        lv_obj_t *r = makeValueRow(scr, &font_value_32, &font_label_18, cWhite(), units[i], 5, values[i]);
         placeLeft(r, RX, RROW_Y[i] + 11);
     }
-
-    // --- góc dưới phải: trạng thái nguồn dữ liệu
-    lv_obj_t *status = makeBox(scr);
-    lv_obj_set_size(status, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_flex_flow(status, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(status, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_hor(status, 14, 0);
-    lv_obj_set_style_pad_ver(status, 7, 0);
-    lv_obj_set_style_pad_column(status, 9, 0);
-    lv_obj_set_style_radius(status, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_border_width(status, 1, 0);
-    lv_obj_set_style_border_color(status, lv_color_hex(0x3A4A66), 0);
-    statusDot = makeBox(status);
-    lv_obj_set_size(statusDot, 10, 10);
-    lv_obj_set_style_radius(statusDot, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_bg_opa(statusDot, LV_OPA_COVER, 0);
-    statusLbl = makeLabel(status, &font_label_18, lv_color_hex(0xAEB8C8), "");
-    placeCenter(status, 676, 436);
 }
 
-void uiUpdate(const VehicleState &s, const char *statusText, bool liveData) {
+void uiUpdate(const VehicleState &s) {
     char buf[32];
 
     // tốc độ
@@ -571,13 +514,6 @@ void uiUpdate(const VehicleState &s, const char *statusText, bool liveData) {
         lv_obj_set_style_bg_color(battNub, c, 0);
     }
 
-    snprintf(buf, sizeof(buf), "%.1f", s.voltage);
-    setText(voltLbl, buf);
-    snprintf(buf, sizeof(buf), "%.1f", s.current);
-    setText(currLbl, buf);
-    snprintf(buf, sizeof(buf), "%.1f", s.power());
-    setText(powerLbl, buf);
-
     // ODO có dấu phẩy ngăn cách hàng nghìn
     long odo = (long)s.odo;
     if (odo >= 1000) {
@@ -590,8 +526,6 @@ void uiUpdate(const VehicleState &s, const char *statusText, bool liveData) {
     setText(tripLbl, buf);
     snprintf(buf, sizeof(buf), "%d", (int)lroundf(s.batteryTemp));
     setText(tempLbl, buf);
-    snprintf(buf, sizeof(buf), "%d", (int)lroundf(s.soh));
-    setText(sohLbl, buf);
     snprintf(buf, sizeof(buf), "%d", (int)lroundf(s.range));
     setText(rangeLbl, buf);
 
@@ -603,12 +537,5 @@ void uiUpdate(const VehicleState &s, const char *statusText, bool liveData) {
         lv_obj_set_style_text_color(modeLbl, c, 0);
         lv_obj_set_style_border_color(modeBtn, c, 0);
         lv_obj_set_style_bg_color(modeBtn, c, 0);
-    }
-
-    // trạng thái dữ liệu
-    setText(statusLbl, statusText);
-    if ((int)liveData != lastLive) {
-        lastLive = liveData;
-        lv_obj_set_style_bg_color(statusDot, liveData ? cGreen() : cAmber(), 0);
     }
 }

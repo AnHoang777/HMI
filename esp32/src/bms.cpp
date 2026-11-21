@@ -15,7 +15,6 @@ constexpr gpio_num_t CAN_RX_PIN = GPIO_NUM_16;
 constexpr float VOLTAGE_SCALE_V_PER_COUNT = 0.002f;
 constexpr float CURRENT_SCALE_A_PER_COUNT = 0.02f;
 constexpr uint32_t LIVE_TIMEOUT_MS = 1200;     // giống CAN_LIVE_TIMEOUT_MS bên code_sac
-constexpr uint32_t FIELD_TIMEOUT_MS = 5000;    // giữ giá trị cũ tối đa 5 s
 constexpr uint32_t RETRY_MS = 2000;
 
 BmsData raw;            // giá trị mới nhất (chưa xét hết hạn)
@@ -174,15 +173,20 @@ void bmsPoll() {
         }
     }
 
+    // Mất tín hiệu vẫn giữ giá trị cuối cùng; màn hình tự hiện cảnh báo theo bmsSilenceMs()
     view = raw;
-    view.packValid = fresh(lastPackMs, now, FIELD_TIMEOUT_MS);
-    view.socValid = fresh(lastSocMs, now, FIELD_TIMEOUT_MS);
-    view.tempValid = fresh(lastTempMs, now, FIELD_TIMEOUT_MS);
+    view.packValid = lastPackMs != 0;
+    view.socValid = lastSocMs != 0;
+    view.tempValid = lastTempMs != 0;
     view.sohValid = raw.sohValid && view.socValid;
 }
 
 bool bmsOnline() {
     return fresh(lastFrameMs, millis(), LIVE_TIMEOUT_MS);
+}
+
+uint32_t bmsSilenceMs() {
+    return millis() - lastFrameMs;   // chưa nhận khung nào → tính từ lúc khởi động
 }
 
 const BmsData &bmsData() {

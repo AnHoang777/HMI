@@ -67,6 +67,10 @@ constexpr uint32_t SEG_COLORS[5] = {0xFF3B3B, 0xFF8A1C, 0xFFD21C, 0xA6F23D, 0x3D
 constexpr int R_ICON_X = 590;
 constexpr int R_TEXT_X = 630;
 
+// Thanh tiêu đề: dải giữa khung neon trên (y = 6) và vạch tiêu đề hai bên (y = 58)
+constexpr int HEADER_CY = 32;
+constexpr int HEADER_SIDE = 26;   // lề trái / phải bằng nhau
+
 // Ô dưới: quãng đường còn lại | đèn báo P / READY / (!) | điện áp, dòng điện
 constexpr int DIV_X[2] = {262, 539};
 constexpr int IND_Y = 396;
@@ -260,6 +264,7 @@ struct Badge {
 };
 Badge badgePark, badgeReady, badgeBrake;
 lv_obj_t *dateLbl;
+lv_obj_t *warnBox, *warnLbl;   // cảnh báo mất tín hiệu giữa thanh tiêu đề
 lv_obj_t *socLbl, *battBox, *battNub, *battSeg[5];
 lv_obj_t *odoLbl, *tripLbl, *tempLbl;
 lv_obj_t *rangeLbl, *voltLbl, *currLbl;
@@ -503,11 +508,12 @@ void uiCreate(const UiCallbacks &cb) {
     lv_obj_set_flex_flow(when, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(when, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(when, 12, 0);
-    makeCalendarIcon(when);
+    lv_obj_t *cal = makeCalendarIcon(when);
+    lv_obj_set_style_translate_y(cal, -2, 0);   // chữ số nằm cao hơn tâm dòng → nâng icon cho thẳng hàng
     dateLbl = makeLabel(when, &font_mid_22, cWhite(), "--/--/----");
     clockLbl = makeLabel(when, &font_mid_22, cWhite(), "--:--");
     lv_obj_set_style_pad_left(clockLbl, 14, 0);
-    lv_obj_align(when, LV_ALIGN_TOP_LEFT, 26, 15);
+    placeLeft(when, HEADER_SIDE, HEADER_CY);
 
     lv_obj_t *status = makeBox(scr);
     lv_obj_set_size(status, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -523,7 +529,33 @@ void uiCreate(const UiCallbacks &cb) {
     lv_obj_set_style_outline_width(bmsDot, 3, 0);
     lv_obj_set_style_outline_opa(bmsDot, 70, 0);
     makeLabel(status, &font_label_16, lv_color_hex(0xDCE6F5), "Kết nối BMS");
-    lv_obj_align(status, LV_ALIGN_TOP_RIGHT, -26, 17);
+    lv_obj_align(status, LV_ALIGN_RIGHT_MID, -HEADER_SIDE, HEADER_CY - H / 2);
+
+    // cảnh báo mất tín hiệu: viên thuốc đỏ "(!) MẤT TÍN HIỆU ..." nằm giữa, ẩn khi bình thường
+    warnBox = makeBox(scr);
+    lv_obj_set_size(warnBox, LV_SIZE_CONTENT, 24);
+    lv_obj_set_style_pad_hor(warnBox, 12, 0);
+    lv_obj_set_style_radius(warnBox, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(warnBox, lv_color_hex(0x3A0A12), 0);
+    lv_obj_set_style_bg_opa(warnBox, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(warnBox, 2, 0);
+    lv_obj_set_style_border_color(warnBox, lv_color_hex(0xFF3B3B), 0);
+    lv_obj_set_style_shadow_color(warnBox, lv_color_hex(0xFF3B3B), 0);
+    lv_obj_set_style_shadow_width(warnBox, 14, 0);
+    lv_obj_set_style_shadow_opa(warnBox, 150, 0);
+    lv_obj_set_flex_flow(warnBox, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(warnBox, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(warnBox, 8, 0);
+    lv_obj_t *warnIcon = makeBox(warnBox);
+    lv_obj_set_size(warnIcon, 16, 16);
+    lv_obj_set_style_radius(warnIcon, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(warnIcon, lv_color_hex(0xFF3B3B), 0);
+    lv_obj_set_style_bg_opa(warnIcon, LV_OPA_COVER, 0);
+    lv_obj_t *bang = makeLabel(warnIcon, &font_label_16, cWhite(), "!");
+    lv_obj_center(bang);
+    warnLbl = makeLabel(warnBox, &font_label_16, lv_color_hex(0xFFD0D6), "");
+    placeCenter(warnBox, GX, 36);
+    lv_obj_add_flag(warnBox, LV_OBJ_FLAG_HIDDEN);
 
     // --- ô SOC: cột pin dọc 5 vạch + SOC %
     battNub = makeBox(scr);
@@ -636,6 +668,15 @@ void uiUpdate(const VehicleState &s, bool bmsConnected, const UiExtras &x) {
     char buf[32];
 
     // đèn báo
+    // cảnh báo mất tín hiệu: nhấp nháy 0,5 s sáng / 0,5 s tắt
+    if (x.warning) {
+        setText(warnLbl, x.warning);
+        if ((millis() / 500) % 2 == 0) lv_obj_clear_flag(warnBox, LV_OBJ_FLAG_HIDDEN);
+        else lv_obj_add_flag(warnBox, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(warnBox, LV_OBJ_FLAG_HIDDEN);
+    }
+
     // P sáng khi đỗ, READY sáng khi sẵn sàng chạy, (!) sáng khi bóp phanh
     setBadge(badgePark, x.ready < 0 ? -1 : (x.ready == 0 ? 1 : 0));
     setBadge(badgeReady, x.ready);

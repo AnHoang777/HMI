@@ -18,6 +18,7 @@ namespace {
 
 constexpr size_t DRAW_LINES = 40;
 constexpr bool DEMO_SIMULATION = false;   // true = chạy dữ liệu giả lập để trưng bày
+constexpr uint32_t SIGNAL_LOST_MS = 5000; // quá thời gian này không có khung CAN → cảnh báo
 
 // Trạng thái hiển thị chỉ gồm dữ liệu thật; NAN = chưa có
 VehicleState realState() {
@@ -52,6 +53,13 @@ UiExtras realExtras() {
         x.modeText = "--";
     }
     if (v.motionValid) x.brake = v.brake ? 1 : 0;
+
+    // quá 5 s không nhận được khung → cảnh báo (số liệu vẫn giữ giá trị cuối)
+    const bool bmsLost = bmsSilenceMs() > SIGNAL_LOST_MS;
+    const bool vcuLost = vcuSilenceMs() > SIGNAL_LOST_MS;
+    if (bmsLost && vcuLost) x.warning = "MẤT TÍN HIỆU CAN";
+    else if (bmsLost) x.warning = "MẤT TÍN HIỆU BMS";
+    else if (vcuLost) x.warning = "MẤT TÍN HIỆU XE";
 
     vcuDebugText(debugBuf, sizeof(debugBuf));
     x.debug = debugBuf;

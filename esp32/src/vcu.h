@@ -34,6 +34,7 @@ struct VcuData {
 void vcuBegin();                                                    // đọc mốc TRIP từ NVS
 void vcuDecode(uint32_t id, const uint8_t *d, uint8_t len, uint32_t now);   // bms.cpp gọi cho mọi khung chuẩn
 void vcuUpdate();                                                   // gọi trong loop()
-const VcuData &vcuData();
+const VcuData &vcuData();                                          // *Valid = đã từng nhận, giữ giá trị cuối
+uint32_t vcuSilenceMs();                                            // bao lâu chưa nhận 0x102 / 0x201 (ms)
 void vcuResetTrip();
 void vcuDebugText(char *buf, size_t size);                         // vài dòng số raw để hiện trên màn

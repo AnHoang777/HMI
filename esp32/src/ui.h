@@ -16,6 +16,7 @@ struct UiExtras {
     const char *modeText = nullptr;   // nullptr = dùng s.mode
     uint32_t modeColor = 0x5A6478;
     const char *debug = nullptr;      // các dòng raw hiện trong ô hình xe (chạm ô để bật/tắt)
+    const char *warning = nullptr;    // cảnh báo đỏ nhấp nháy giữa thanh tiêu đề, nullptr = ẩn
 };
 
 // Tạo giao diện bảng đồng hồ 800x480

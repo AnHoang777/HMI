@@ -64,8 +64,9 @@ void vcuDecode(uint32_t id, const uint8_t *d, uint8_t len, uint32_t now) {
 
 void vcuUpdate() {
     const uint32_t now = millis();
-    v.stateValid = fresh(last102Ms, now);
-    v.motionValid = fresh(last201Ms, now);
+    // Mất tín hiệu vẫn giữ giá trị cuối cùng; màn hình tự hiện cảnh báo theo vcuSilenceMs()
+    v.stateValid = last102Ms != 0;
+    v.motionValid = last201Ms != 0;
 
     v.speedKmh = v.motionValid ? v.speedRaw * SPEED_KMH_PER_COUNT : NAN;
     v.odoKm = (v.motionValid && haveOdo) ? v.odoRaw * ODO_KM_PER_COUNT : NAN;
@@ -77,11 +78,16 @@ void vcuUpdate() {
                       v.stateRaw, v.ready ? "READY" : "P", v.sport ? "SPORT" : "ECO", v.standDown,
                       v.dist100m, v.speedRaw * SPEED_KMH_PER_COUNT, v.odoRaw * ODO_KM_PER_COUNT,
                       tripStartSet ? (v.odoRaw - tripStartRaw) * ODO_KM_PER_COUNT : 0.0f, v.brake,
-                      v.motionValid ? "ONLINE" : "OFFLINE");
+                      fresh(last201Ms, now) ? "ONLINE" : "OFFLINE");
     }
 }
 
 const VcuData &vcuData() { return v; }
+
+uint32_t vcuSilenceMs() {
+    const uint32_t last = last102Ms > last201Ms ? last102Ms : last201Ms;
+    return millis() - last;   // chưa nhận khung nào → tính từ lúc khởi động
+}
 
 void vcuResetTrip() {
     if (!haveOdo) return;

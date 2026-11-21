@@ -28,4 +28,5 @@ struct BmsData {
 void bmsBegin();
 void bmsPoll();                 // gọi thường xuyên trong loop()
 bool bmsOnline();               // có khung BMS trong 1,2 s gần nhất
-const BmsData &bmsData();       // các cờ *Valid đã tính cả thời gian hết hạn
+uint32_t bmsSilenceMs();        // bao lâu chưa nhận khung BMS (ms)
+const BmsData &bmsData();       // *Valid = đã từng nhận; mất tín hiệu vẫn giữ giá trị cuối

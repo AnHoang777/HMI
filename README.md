@@ -54,6 +54,7 @@ Thư mục `esp32/` chứa firmware PlatformIO (Arduino + LVGL 8.3) vẽ cùng g
 - `src/ui.cpp`: giao diện (thanh pin 5 vạch nhiều màu, không có CarPlay)
 - `src/bms.cpp`: đọc BMS qua CAN 250 kbps (GPIO15 TX / GPIO16 RX, chỉ nghe, không gửi): SOC, điện áp, dòng điện, nhiệt độ pin – cùng bảng giải mã với firmware sạc `code_sac`
 - `src/vcu.cpp`: đọc CAN của xe – 0x102 (P/READY, ECO/SPORT, chân chống), 0x201 (tốc độ /10 km/h, ODO /10 km, phanh). TRIP = ODO − mốc reset (lưu NVS), giữ lâu ô TRIP để reset.
+- `src/range.cpp`: ước tính quãng đường còn đi được = SOC × km/% pin. Số km/% tự học khi chạy (mỗi lần SOC giảm 1 %, đo quãng đường ODO), lưu NVS; ban đầu giả định 0,85 km/%.
 - `src/vehicle.cpp`: dữ liệu giả lập, chỉ dùng khi `DEMO_SIMULATION = true` trong `main.cpp`
 
 Chạm ô hình xe để bật/tắt ô số raw (0x102, 0x201) – dùng khi dò mã CAN.

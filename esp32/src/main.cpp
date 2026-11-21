@@ -10,6 +10,7 @@
 
 #include "bms.h"
 #include "board.h"
+#include "range.h"
 #include "ui.h"
 #include "vcu.h"
 #include "vehicle.h"
@@ -28,7 +29,8 @@ VehicleState realState() {
     s.speed = v.speedKmh;
     s.odo = v.odoKm;
     s.trip = v.tripKm;
-    s.range = NAN;          // chưa có cách tính quãng đường còn lại từ dữ liệu thật
+    rangeUpdate(b.socValid, b.soc, v.motionValid, v.odoRaw);
+    s.range = rangeKm();    // SOC × km/% tự học theo ODO (range.cpp)
     s.soh = b.sohValid ? b.soh : NAN;
     s.soc = b.socValid ? b.soc : NAN;
     s.voltage = b.packValid ? b.voltage : NAN;
@@ -122,6 +124,7 @@ void setup() {
     lv_indev_drv_register(&indevDrv);
 
     vcuBegin();
+    rangeBegin();
     bmsBegin();
 
     UiCallbacks cb;

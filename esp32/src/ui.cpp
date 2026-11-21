@@ -513,7 +513,6 @@ void uiCreate(const UiCallbacks &cb) {
     lv_obj_set_style_translate_y(cal, -2, 0);   // chữ số nằm cao hơn tâm dòng → nâng icon cho thẳng hàng
     dateLbl = makeLabel(when, &font_mid_22, cWhite(), "--/--/----");
     clockLbl = makeLabel(when, &font_mid_22, cWhite(), "--:--");
-    lv_obj_set_style_pad_left(clockLbl, 10, 0);
     placeLeft(when, HEADER_SIDE, HEADER_CY);
 
     lv_obj_t *status = makeBox(scr);

@@ -10,7 +10,7 @@ struct UiCallbacks {
 
 // Trạng thái phụ lấy từ CAN của xe. -1 = chưa biết, 0 = tắt, 1 = bật
 struct UiExtras {
-    int8_t park = -1;
+    int8_t ready = -1;                // 1 = READY, 0 = P
     int8_t brake = -1;
     int8_t stand = -1;
     const char *modeText = nullptr;   // nullptr = dùng s.mode

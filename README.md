@@ -53,10 +53,10 @@ Thư mục `esp32/` chứa firmware PlatformIO (Arduino + LVGL 8.3) vẽ cùng g
 - `src/board.cpp`: driver màn RGB, cảm ứng GT911, IO expander CH422G
 - `src/ui.cpp`: giao diện (thanh pin 5 vạch nhiều màu, không có CarPlay)
 - `src/bms.cpp`: đọc BMS qua CAN 250 kbps (GPIO15 TX / GPIO16 RX, chỉ nghe, không gửi): SOC, điện áp, dòng điện, nhiệt độ pin – cùng bảng giải mã với firmware sạc `code_sac`
-- `src/vcu.cpp`: đọc CAN của xe – 0x102 (chế độ, chân chống), 0x201 (tốc độ raw, ODO /10 km, phanh). Hệ số tốc độ tự hiệu chỉnh theo ODO (cần chạy ≥ 0,5 km) và lưu vào NVS. TRIP = ODO − mốc reset, giữ lâu ô TRIP để reset. Bảng mã chế độ 0x102 D0 điền trong `MODE_TABLE`.
+- `src/vcu.cpp`: đọc CAN của xe – 0x102 (P/READY, ECO/SPORT, chân chống), 0x201 (tốc độ /10 km/h, ODO /10 km, phanh). TRIP = ODO − mốc reset (lưu NVS), giữ lâu ô TRIP để reset.
 - `src/vehicle.cpp`: dữ liệu giả lập, chỉ dùng khi `DEMO_SIMULATION = true` trong `main.cpp`
 
-Chạm ô hình xe để bật/tắt ô số raw (0x102, 0x201, hệ số tốc độ) – dùng khi dò mã CAN.
+Chạm ô hình xe để bật/tắt ô số raw (0x102, 0x201) – dùng khi dò mã CAN.
 
 Đấu dây CAN: CANH/CANL của BMS vào cổng CAN trên board (chung GND). Log BMS in ra Serial 115200 mỗi 2 giây.
 - `tools/gen_fonts.sh`: tạo font tiếng Việt (Be Vietnam Pro) cho LVGL

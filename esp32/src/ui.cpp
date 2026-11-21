@@ -374,7 +374,7 @@ Badge makeBadge(lv_obj_t *parent, const char *text, uint32_t onColor) {
     b.state = -2;
     b.box = makeBox(parent);
     lv_obj_set_size(b.box, LV_SIZE_CONTENT, 22);
-    lv_obj_set_style_pad_hor(b.box, 10, 0);
+    lv_obj_set_style_pad_hor(b.box, 8, 0);
     lv_obj_set_style_radius(b.box, 6, 0);
     lv_obj_set_style_border_width(b.box, 2, 0);
     lv_obj_set_style_bg_opa(b.box, LV_OPA_COVER, 0);
@@ -384,7 +384,12 @@ Badge makeBadge(lv_obj_t *parent, const char *text, uint32_t onColor) {
 }
 
 // -1 chưa biết (viền xám, chữ mờ), 0 tắt (viền tối), 1 bật (nền màu, phát sáng)
-void setBadge(Badge &b, int state) {
+void setBadge(Badge &b, int state, const char *text = nullptr, uint32_t onColor = 0) {
+    if (text) setText(b.lbl, text);
+    if (onColor && onColor != b.onColor) {
+        b.onColor = onColor;
+        b.state = -2;   // vẽ lại với màu mới
+    }
     if (state == b.state) return;
     b.state = state;
     const lv_color_t on = lv_color_hex(b.onColor);
@@ -462,7 +467,7 @@ void uiCreate(const UiCallbacks &cb) {
     lv_obj_set_size(badges, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_set_flex_flow(badges, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(badges, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_column(badges, 10, 0);
+    lv_obj_set_style_pad_column(badges, 8, 0);
     badgePark = makeBadge(badges, "P", 0x1E9BFF);
     badgeBrake = makeBadge(badges, "PHANH", 0xFF3B3B);
     badgeStand = makeBadge(badges, "CHỐNG", 0xFFA51C);
@@ -583,7 +588,8 @@ void uiUpdate(const VehicleState &s, bool bmsConnected, const UiExtras &x) {
     char buf[32];
 
     // đèn báo
-    setBadge(badgePark, x.park);
+    if (x.ready == 1) setBadge(badgePark, 1, "READY", 0x3DF26A);
+    else setBadge(badgePark, x.ready == 0 ? 1 : -1, "P", 0x1E9BFF);
     setBadge(badgeBrake, x.brake);
     setBadge(badgeStand, x.stand);
 

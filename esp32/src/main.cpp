@@ -38,29 +38,20 @@ VehicleState realState() {
 
 // Đèn báo, chế độ và ô raw từ CAN của xe
 UiExtras realExtras() {
-    static char modeBuf[12];
     static char debugBuf[200];
     UiExtras x;
     const VcuData &v = vcuData();
 
     if (v.stateValid) {
-        uint32_t color = 0;
-        bool park = false;
-        const char *name = vcuModeName(v.stateRaw, &color, &park);
-        if (name) {
-            x.modeText = name;
-            x.modeColor = color;
-            x.park = park ? 1 : 0;
-        } else {
-            snprintf(modeBuf, sizeof(modeBuf), "0x%02X", v.stateRaw);   // mã chưa có trong bảng
-            x.modeText = modeBuf;
-            x.modeColor = 0xDCE6F5;
-        }
-        x.stand = v.standBit ? 1 : 0;
+        const DriveMode m = v.sport ? DriveMode::Sport : DriveMode::Eco;
+        x.modeText = modeTitle(m);
+        x.modeColor = modeColorHex(m);
+        x.ready = v.ready ? 1 : 0;
+        x.stand = v.standDown ? 1 : 0;
     } else {
         x.modeText = "--";
     }
-    if (v.motionValid) x.brake = v.brakeBit ? 1 : 0;
+    if (v.motionValid) x.brake = v.brake ? 1 : 0;
 
     vcuDebugText(debugBuf, sizeof(debugBuf));
     x.debug = debugBuf;

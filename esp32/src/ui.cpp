@@ -93,7 +93,8 @@ lv_color_t bgAt(int y) {
 }
 
 // ---------------------------------------------------------------- hình học tĩnh
-lv_point_t topPts[6] = {{12, 6}, {250, 6}, {270, 24}, {530, 24}, {550, 6}, {788, 6}};
+// Khung trên vát xuống ở giữa; hai bên đủ rộng cho cụm ngày giờ (trái) và "Kết nối BMS" (phải)
+lv_point_t topPts[6] = {{12, 6}, {290, 6}, {308, 24}, {492, 24}, {510, 6}, {788, 6}};
 lv_point_t headerPts[6] = {{12, 58}, {240, 58}, {262, 48}, {538, 48}, {560, 58}, {788, 58}};
 lv_point_t footPts[4] = {{8, 452}, {24, 468}, {776, 468}, {792, 452}};
 
@@ -507,12 +508,12 @@ void uiCreate(const UiCallbacks &cb) {
     lv_obj_set_size(when, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_set_flex_flow(when, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(when, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_column(when, 12, 0);
+    lv_obj_set_style_pad_column(when, 10, 0);
     lv_obj_t *cal = makeCalendarIcon(when);
     lv_obj_set_style_translate_y(cal, -2, 0);   // chữ số nằm cao hơn tâm dòng → nâng icon cho thẳng hàng
     dateLbl = makeLabel(when, &font_mid_22, cWhite(), "--/--/----");
     clockLbl = makeLabel(when, &font_mid_22, cWhite(), "--:--");
-    lv_obj_set_style_pad_left(clockLbl, 14, 0);
+    lv_obj_set_style_pad_left(clockLbl, 10, 0);
     placeLeft(when, HEADER_SIDE, HEADER_CY);
 
     lv_obj_t *status = makeBox(scr);

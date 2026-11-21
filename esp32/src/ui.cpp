@@ -1,6 +1,6 @@
 // Giao diện bảng đồng hồ neon – LVGL 8.3, màn 800x480, bám theo ảnh thiết kế esp32/assets/design.jpg
 //
-//  ┌ 📅 20/11/2026  12:51 ─────────────────────────── ᛒ ● Kết nối BMS ┐
+//  ┌ 📅 20/11/2026 ───────────────────────────── ᛒ ● Kết nối BMS  12:51 ┐
 //  │ [pin dọc] SOC 89%  ╲      ( đồng hồ tròn )      ╱  (A) ODO      │
 //  │ [ xe tay ga ]      ╱      24 km/h  [ECO]        ╲  (A) TRIP     │
 //  │                                                    🌡 Nhiệt độ pin │
@@ -512,7 +512,6 @@ void uiCreate(const UiCallbacks &cb) {
     lv_obj_t *cal = makeCalendarIcon(when);
     lv_obj_set_style_translate_y(cal, -2, 0);   // chữ số nằm cao hơn tâm dòng → nâng icon cho thẳng hàng
     dateLbl = makeLabel(when, &font_mid_22, cWhite(), "--/--/----");
-    clockLbl = makeLabel(when, &font_mid_22, cWhite(), "--:--");
     placeLeft(when, HEADER_SIDE, HEADER_CY);
 
     lv_obj_t *status = makeBox(scr);
@@ -529,6 +528,8 @@ void uiCreate(const UiCallbacks &cb) {
     lv_obj_set_style_outline_width(bmsDot, 3, 0);
     lv_obj_set_style_outline_opa(bmsDot, 70, 0);
     makeLabel(status, &font_label_16, lv_color_hex(0xDCE6F5), "Kết nối BMS");
+    clockLbl = makeLabel(status, &font_mid_22, cWhite(), "--:--");
+    lv_obj_set_style_pad_left(clockLbl, 12, 0);
     lv_obj_align(status, LV_ALIGN_RIGHT_MID, -HEADER_SIDE, HEADER_CY - H / 2);
 
     // cảnh báo mất tín hiệu: viên thuốc đỏ "(!) MẤT TÍN HIỆU ..." nằm giữa, ẩn khi bình thường

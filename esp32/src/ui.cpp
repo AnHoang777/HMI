@@ -1,11 +1,11 @@
 // Giao diện bảng đồng hồ neon – LVGL 8.3, màn 800x480, bám theo ảnh thiết kế esp32/assets/design.jpg
 //
-//  ┌ V VINFAST ───────────────────────────── ᛒ ● Kết nối BMS  14:32 ┐
-//  │ [pin dọc] SOC 91%  ╲      ( đồng hồ tròn )      ╱  (A) ODO      │
-//  │ [ xe tay ga ]      ╱      39 km/h  [ECO]        ╲  (A) TRIP     │
+//  ┌ 📅 20/11/2026  12:51 ─────────────────────────── ᛒ ● Kết nối BMS ┐
+//  │ [pin dọc] SOC 89%  ╲      ( đồng hồ tròn )      ╱  (A) ODO      │
+//  │ [ xe tay ga ]      ╱      24 km/h  [ECO]        ╲  (A) TRIP     │
 //  │                                                    🌡 Nhiệt độ pin │
-//  │ ⚡ Ước tính còn đi được 72 km │  V VINFAST  │ 🔌 Điện áp / ⚡ Dòng điện │
-//  └────────────────── 🍃 Vì một tương lai xanh 🍃 ──────────────────────┘
+//  │ ⚡ Ước tính còn đi được 71 km │ [P] (READY) (!) │ 🔌 Điện áp / ⚡ Dòng điện │
+//  └──────────────────────────────────────────────────────────────────┘
 //
 // Lớp nền (khung neon, ô thẻ góc vát, vòng đồng hồ, vạch chia) vẽ trực tiếp.
 // Logo, icon, hình xe là ảnh cắt từ thiết kế. Số liệu, cung tốc độ, cột pin là widget LVGL.
@@ -40,7 +40,7 @@ struct Cut {
 constexpr Box CARD_SOC{12, 66, 238, 130};
 constexpr Box CARD_BIKE{12, 204, 238, 124};
 constexpr Box CARD_R[3] = {{550, 66, 238, 82}, {550, 156, 238, 82}, {550, 246, 238, 82}};
-constexpr Box CARD_BOTTOM{12, 338, 776, 108};
+constexpr Box CARD_BOTTOM{12, 338, 776, 116};
 
 constexpr Cut CUT_SOC{8, 26, 8, 8};
 constexpr Cut CUT_BIKE{8, 30, 14, 8};
@@ -67,10 +67,13 @@ constexpr uint32_t SEG_COLORS[5] = {0xFF3B3B, 0xFF8A1C, 0xFFD21C, 0xA6F23D, 0x3D
 constexpr int R_ICON_X = 590;
 constexpr int R_TEXT_X = 630;
 
-// Ô dưới
-constexpr int VA_ICON_X = 518;
-constexpr int VA_TEXT_X = 546;
-constexpr int VA_ROW_Y[2] = {367, 415};
+// Ô dưới: quãng đường còn lại | đèn báo P / READY / (!) | điện áp, dòng điện
+constexpr int DIV_X[2] = {262, 539};
+constexpr int IND_Y = 396;
+constexpr int IND_X[3] = {309, 409, 501};   // P, READY, (!)
+constexpr int VA_ICON_X = 585;
+constexpr int VA_TEXT_X = 614;
+constexpr int VA_ROW_Y[2] = {362, 414};
 
 inline lv_color_t cCyan() { return lv_color_hex(0x19E0FF); }
 inline lv_color_t cBlue() { return lv_color_hex(0x1E6BFF); }
@@ -88,10 +91,7 @@ lv_color_t bgAt(int y) {
 // ---------------------------------------------------------------- hình học tĩnh
 lv_point_t topPts[6] = {{12, 6}, {250, 6}, {270, 24}, {530, 24}, {550, 6}, {788, 6}};
 lv_point_t headerPts[6] = {{12, 58}, {240, 58}, {262, 48}, {538, 48}, {560, 58}, {788, 58}};
-lv_point_t footL[3] = {{8, 446}, {30, 466}, {272, 466}};
-lv_point_t footR[3] = {{528, 466}, {770, 466}, {792, 446}};
-lv_point_t footLowL[2] = {{40, 476}, {200, 476}};
-lv_point_t footLowR[2] = {{600, 476}, {760, 476}};
+lv_point_t footPts[4] = {{8, 452}, {24, 468}, {776, 468}, {792, 452}};
 
 // ---------------------------------------------------------------- vẽ cơ bản
 void drawLine(lv_draw_ctx_t *ctx, lv_color_t c, int w, int x1, int y1, int x2, int y2) {
@@ -198,10 +198,7 @@ void drawBack(lv_event_t *e) {
     // khung neon trên / dưới
     neonPolyline(ctx, topPts, 6, 2, true);
     neonPolyline(ctx, headerPts, 6, 3, true);
-    neonPolyline(ctx, footL, 3, 2, false);
-    neonPolyline(ctx, footR, 3, 2, false);
-    neonPolyline(ctx, footLowL, 2, 1, true);
-    neonPolyline(ctx, footLowR, 2, 1, true);
+    neonPolyline(ctx, footPts, 4, 2, false);
 
     // quầng sáng lớn quanh đồng hồ (dưới các ô thẻ)
     drawCircle(ctx, GX, GY, G_RING + 40, cBlue(), 16);
@@ -218,8 +215,10 @@ void drawBack(lv_event_t *e) {
     lv_draw_rect_dsc_init(&div);
     div.bg_opa = LV_OPA_COVER;
     div.bg_color = lv_color_hex(0x2A5AA8);
-    lv_area_t divA = {490, 356, 491, 428};
-    lv_draw_rect(ctx, &div, &divA);
+    for (int x : DIV_X) {
+        lv_area_t divA = {(lv_coord_t)x, 356, (lv_coord_t)(x + 1), 436};
+        lv_draw_rect(ctx, &div, &divA);
+    }
 
     // đồng hồ: lòng tối, vòng neon ngoài nhiều lớp, vòng trong mảnh, rãnh cung, vạch chia
     const lv_color_t ringBg = bgAt(GY);
@@ -251,15 +250,16 @@ UiCallbacks callbacks;
 
 lv_obj_t *speedLbl, *arcGlowWide, *arcGlow, *arcMain, *arcCore;
 lv_obj_t *scooterImg, *debugLbl;
-bool debugShown = true;
+bool debugShown = false;
 
-// Đèn báo ở giữa thanh tiêu đề
+// Đèn báo giữa ô dưới: P, READY, (!) phanh
 struct Badge {
     lv_obj_t *box, *lbl;
     uint32_t onColor;
     int state;
 };
-Badge badgePark, badgeBrake, badgeStand;
+Badge badgePark, badgeReady, badgeBrake;
+lv_obj_t *dateLbl;
 lv_obj_t *socLbl, *battBox, *battNub, *battSeg[5];
 lv_obj_t *odoLbl, *tripLbl, *tempLbl;
 lv_obj_t *rangeLbl, *voltLbl, *currLbl;
@@ -270,7 +270,7 @@ int lastBattLevel = -1;
 char lastModeText[16] = "";
 uint32_t lastModeColor = 0xFFFFFFFF;
 int lastBms = -1;
-int buildSeconds = 0;
+uint32_t buildSeconds = 0;
 
 lv_obj_t *makeLabel(lv_obj_t *parent, const lv_font_t *f, lv_color_t c, const char *text) {
     lv_obj_t *l = lv_label_create(parent);
@@ -368,62 +368,121 @@ lv_obj_t *makeTouchArea(lv_obj_t *parent, const Box &b) {
     return o;
 }
 
-Badge makeBadge(lv_obj_t *parent, const char *text, uint32_t onColor) {
+// Đèn báo kiểu viền neon: w x h, radius; chữ font đậm
+Badge makeBadge(lv_obj_t *parent, const char *text, const lv_font_t *font, uint32_t onColor,
+                int cx, int cy, int w, int h, int radius) {
     Badge b;
     b.onColor = onColor;
     b.state = -2;
     b.box = makeBox(parent);
-    lv_obj_set_size(b.box, LV_SIZE_CONTENT, 22);
-    lv_obj_set_style_pad_hor(b.box, 8, 0);
-    lv_obj_set_style_radius(b.box, 6, 0);
-    lv_obj_set_style_border_width(b.box, 2, 0);
+    lv_obj_set_size(b.box, w, h);
+    lv_obj_set_style_radius(b.box, radius, 0);
+    lv_obj_set_style_border_width(b.box, 3, 0);
     lv_obj_set_style_bg_opa(b.box, LV_OPA_COVER, 0);
-    b.lbl = makeLabel(b.box, &font_label_16, cWhite(), text);
+    b.lbl = makeLabel(b.box, font, cWhite(), text);
     lv_obj_center(b.lbl);
+    placeCenter(b.box, cx, cy);
     return b;
 }
 
-// -1 chưa biết (viền xám, chữ mờ), 0 tắt (viền tối), 1 bật (nền màu, phát sáng)
-void setBadge(Badge &b, int state, const char *text = nullptr, uint32_t onColor = 0) {
-    if (text) setText(b.lbl, text);
-    if (onColor && onColor != b.onColor) {
-        b.onColor = onColor;
-        b.state = -2;   // vẽ lại với màu mới
-    }
+// 1 = sáng (viền + chữ màu, quầng sáng), 0 = tắt, -1 = chưa có dữ liệu (đều mờ)
+void setBadge(Badge &b, int state) {
     if (state == b.state) return;
     b.state = state;
     const lv_color_t on = lv_color_hex(b.onColor);
+    const lv_color_t base = lv_color_hex(0x07101F);
     if (state == 1) {
-        lv_obj_set_style_bg_color(b.box, on, 0);
-        lv_obj_set_style_border_color(b.box, lv_color_mix(cWhite(), on, 90), 0);
+        lv_obj_set_style_bg_color(b.box, lv_color_mix(on, base, 40), 0);
+        lv_obj_set_style_border_color(b.box, on, 0);
         lv_obj_set_style_shadow_color(b.box, on, 0);
-        lv_obj_set_style_shadow_width(b.box, 10, 0);
-        lv_obj_set_style_shadow_opa(b.box, 160, 0);
-        lv_obj_set_style_text_color(b.lbl, lv_color_hex(0x05101F), 0);
+        lv_obj_set_style_shadow_width(b.box, 18, 0);
+        lv_obj_set_style_shadow_opa(b.box, 140, 0);
+        lv_obj_set_style_text_color(b.lbl, on, 0);
     } else {
-        lv_obj_set_style_bg_color(b.box, lv_color_hex(0x07101F), 0);
-        lv_obj_set_style_border_color(b.box, state == 0 ? lv_color_mix(on, lv_color_hex(0x07101F), 90)
-                                                        : lv_color_hex(0x2A3550), 0);
+        lv_obj_set_style_bg_color(b.box, base, 0);
+        lv_obj_set_style_border_color(b.box, state == 0 ? lv_color_mix(on, base, 60) : lv_color_hex(0x2A3550), 0);
         lv_obj_set_style_shadow_width(b.box, 0, 0);
-        lv_obj_set_style_text_color(b.lbl, state == 0 ? lv_color_mix(on, lv_color_hex(0x07101F), 140)
-                                                      : lv_color_hex(0x4A5570), 0);
+        lv_obj_set_style_text_color(b.lbl, state == 0 ? lv_color_mix(on, base, 80) : lv_color_hex(0x3A4560), 0);
     }
 }
 
-// Đồng hồ: chưa có nguồn giờ thật (RTC / WiFi / điện thoại) nên tạm tính từ giờ build firmware (UTC+7)
-int parseBuildSeconds() {
-    const char *t = __TIME__;   // "HH:MM:SS"
+// Icon lịch nhỏ vẽ bằng khối: 2 móc treo + khung + dải trên + 4 ô ngày
+lv_obj_t *makeCalendarIcon(lv_obj_t *parent) {
+    const lv_color_t c = lv_color_hex(0x5FC8FF);
+    lv_obj_t *icon = makeBox(parent);
+    lv_obj_set_size(icon, 24, 25);
+    lv_obj_t *frame = makeBox(icon);
+    lv_obj_set_pos(frame, 0, 4);
+    lv_obj_set_size(frame, 24, 21);
+    lv_obj_set_style_radius(frame, 4, 0);
+    lv_obj_set_style_border_width(frame, 2, 0);
+    lv_obj_set_style_border_color(frame, c, 0);
+    lv_obj_t *band = makeBox(icon);
+    lv_obj_set_pos(band, 0, 4);
+    lv_obj_set_size(band, 24, 7);
+    lv_obj_set_style_radius(band, 3, 0);
+    lv_obj_set_style_bg_color(band, c, 0);
+    lv_obj_set_style_bg_opa(band, LV_OPA_COVER, 0);
+    for (int i = 0; i < 2; i++) {
+        lv_obj_t *hook = makeBox(icon);
+        lv_obj_set_pos(hook, 6 + i * 9, 0);
+        lv_obj_set_size(hook, 3, 7);
+        lv_obj_set_style_radius(hook, 1, 0);
+        lv_obj_set_style_bg_color(hook, c, 0);
+        lv_obj_set_style_bg_opa(hook, LV_OPA_COVER, 0);
+    }
+    for (int i = 0; i < 4; i++) {
+        lv_obj_t *day = makeBox(icon);
+        lv_obj_set_pos(day, 5 + (i % 2) * 9, 13 + (i / 2) * 5);
+        lv_obj_set_size(day, 5, 3);
+        lv_obj_set_style_bg_color(day, c, 0);
+        lv_obj_set_style_bg_opa(day, LV_OPA_COVER, 0);
+    }
+    return icon;
+}
+
+// Ngày giờ: chưa có nguồn giờ thật (RTC / WiFi / điện thoại) nên tính từ lúc build firmware (UTC+7)
+int buildDay = 1, buildMonth = 1, buildYear = 2026;
+
+void parseBuildTime() {
+    const char *t = __TIME__;   // "HH:MM:SS" (UTC trên GitHub Actions)
     int h = (t[0] - '0') * 10 + (t[1] - '0');
     int m = (t[3] - '0') * 10 + (t[4] - '0');
     int s = (t[6] - '0') * 10 + (t[7] - '0');
-    return ((h + 7) % 24) * 3600 + m * 60 + s;
+    buildSeconds = (h + 7) * 3600 + m * 60 + s;   // có thể vượt 24 h → sang ngày hôm sau
+
+    const char *d = __DATE__;   // "Mmm dd yyyy"
+    static const char *MONTHS = "JanFebMarAprMayJunJulAugSepOctNovDec";
+    for (int i = 0; i < 12; i++) {
+        if (strncmp(d, MONTHS + i * 3, 3) == 0) buildMonth = i + 1;
+    }
+    buildDay = (d[4] == ' ' ? 0 : d[4] - '0') * 10 + (d[5] - '0');
+    buildYear = atoi(d + 7);
+}
+
+void dateAfterDays(int days, int &dd, int &mm, int &yy) {
+    static const int DIM[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    dd = buildDay;
+    mm = buildMonth;
+    yy = buildYear;
+    while (days-- > 0) {
+        const bool leap = (yy % 4 == 0 && yy % 100 != 0) || yy % 400 == 0;
+        const int dim = DIM[mm - 1] + (mm == 2 && leap ? 1 : 0);
+        if (++dd > dim) {
+            dd = 1;
+            if (++mm > 12) {
+                mm = 1;
+                yy++;
+            }
+        }
+    }
 }
 
 }  // namespace
 
 void uiCreate(const UiCallbacks &cb) {
     callbacks = cb;
-    buildSeconds = parseBuildSeconds();
+    parseBuildTime();
 
     lv_obj_t *scr = lv_scr_act();
     lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
@@ -438,11 +497,17 @@ void uiCreate(const UiCallbacks &cb) {
     lv_obj_set_pos(back, 0, 0);
     lv_obj_add_event_cb(back, drawBack, LV_EVENT_DRAW_MAIN, NULL);
 
-    // --- đầu màn: logo + trạng thái BMS + giờ
-    makeImage(scr, &img_logo_small, 44, 31);
-    lv_obj_t *brand = makeLabel(scr, &font_mid_22, cWhite(), "VINFAST");
-    lv_obj_set_style_text_letter_space(brand, 7, 0);
-    placeLeft(brand, 76, 31);
+    // --- đầu màn: lịch + ngày + giờ | trạng thái BMS
+    lv_obj_t *when = makeBox(scr);
+    lv_obj_set_size(when, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(when, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(when, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(when, 12, 0);
+    makeCalendarIcon(when);
+    dateLbl = makeLabel(when, &font_mid_22, cWhite(), "--/--/----");
+    clockLbl = makeLabel(when, &font_mid_22, cWhite(), "--:--");
+    lv_obj_set_style_pad_left(clockLbl, 14, 0);
+    lv_obj_align(when, LV_ALIGN_TOP_LEFT, 26, 15);
 
     lv_obj_t *status = makeBox(scr);
     lv_obj_set_size(status, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -458,20 +523,7 @@ void uiCreate(const UiCallbacks &cb) {
     lv_obj_set_style_outline_width(bmsDot, 3, 0);
     lv_obj_set_style_outline_opa(bmsDot, 70, 0);
     makeLabel(status, &font_label_16, lv_color_hex(0xDCE6F5), "Kết nối BMS");
-    clockLbl = makeLabel(status, &font_mid_22, cWhite(), "--:--");
-    lv_obj_set_style_pad_left(clockLbl, 14, 0);
-    lv_obj_align(status, LV_ALIGN_TOP_RIGHT, -22, 15);
-
-    // --- đèn báo P / PHANH / CHỐNG giữa thanh tiêu đề
-    lv_obj_t *badges = makeBox(scr);
-    lv_obj_set_size(badges, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_flex_flow(badges, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(badges, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_column(badges, 8, 0);
-    badgePark = makeBadge(badges, "P", 0x1E9BFF);
-    badgeBrake = makeBadge(badges, "PHANH", 0xFF3B3B);
-    badgeStand = makeBadge(badges, "CHỐNG", 0xFFA51C);
-    placeCenter(badges, GX, 36);
+    lv_obj_align(status, LV_ALIGN_TOP_RIGHT, -26, 17);
 
     // --- ô SOC: cột pin dọc 5 vạch + SOC %
     battNub = makeBox(scr);
@@ -551,25 +603,21 @@ void uiCreate(const UiCallbacks &cb) {
     makeStat(scr, R_TEXT_X, CARD_R[2].cy(), "Nhiệt độ pin", lv_color_hex(0xDCE6F5), "°C", &tempLbl);
     lv_obj_add_event_cb(makeTouchArea(scr, CARD_R[1]), onTripLongPress, LV_EVENT_LONG_PRESSED, NULL);
 
-    // --- ô dưới: quãng đường còn lại | logo | điện áp, dòng điện
-    makeImage(scr, &img_bolt, 54, CARD_BOTTOM.cy());
+    // --- ô dưới: quãng đường còn lại | P, READY, (!) | điện áp, dòng điện
+    makeImage(scr, &img_bolt, 50, CARD_BOTTOM.cy());
     lv_obj_t *rangeTitle = makeLabel(scr, &font_label_16, lv_color_hex(0xDCE6F5), "Ước tính còn đi được");
-    placeLeft(rangeTitle, 94, 370);
+    placeLeft(rangeTitle, 90, 374);
     lv_obj_t *rangeRow = makeValueRow(scr, &font_range_44, &font_mid_22, cGreen(), "km", 5, &rangeLbl);
-    placeLeft(rangeRow, 94, 410);
+    placeLeft(rangeRow, 90, 414);
 
-    makeImage(scr, &img_logo_center, 405, CARD_BOTTOM.cy());
+    badgePark = makeBadge(scr, "P", &font_value_26, 0x3DF26A, IND_X[0], IND_Y, 46, 44, 9);
+    badgeReady = makeBadge(scr, "READY", &font_mid_22, 0x3DF26A, IND_X[1], IND_Y, 108, 40, LV_RADIUS_CIRCLE);
+    badgeBrake = makeBadge(scr, "!", &font_value_26, 0xFF3B3B, IND_X[2], IND_Y, 44, 44, LV_RADIUS_CIRCLE);
 
     makeImage(scr, &img_plug, VA_ICON_X, VA_ROW_Y[0]);
     makeImage(scr, &img_current, VA_ICON_X, VA_ROW_Y[1]);
-    makeStat(scr, VA_TEXT_X, VA_ROW_Y[0] - 2, "Điện áp pin", cLabel(), "V", &voltLbl);
-    makeStat(scr, VA_TEXT_X, VA_ROW_Y[1] + 2, "Dòng điện", cLabel(), "A", &currLbl);
-
-    // --- khẩu hiệu
-    makeImage(scr, &img_leaf_l, 292, 466);
-    makeImage(scr, &img_leaf_r, 508, 466);
-    lv_obj_t *slogan = makeLabel(scr, &font_italic_16, lv_color_hex(0x7FB8FF), "Vì một tương lai xanh");
-    placeCenter(slogan, GX, 466);
+    makeStat(scr, VA_TEXT_X, VA_ROW_Y[0], "Điện áp pin", cLabel(), "V", &voltLbl);
+    makeStat(scr, VA_TEXT_X, VA_ROW_Y[1], "Dòng điện", cLabel(), "A", &currLbl);
 }
 
 // Giá trị NAN = chưa có dữ liệu → hiện "--"
@@ -588,10 +636,10 @@ void uiUpdate(const VehicleState &s, bool bmsConnected, const UiExtras &x) {
     char buf[32];
 
     // đèn báo
-    if (x.ready == 1) setBadge(badgePark, 1, "READY", 0x3DF26A);
-    else setBadge(badgePark, x.ready == 0 ? 1 : -1, "P", 0x1E9BFF);
+    // P sáng khi đỗ, READY sáng khi sẵn sàng chạy, (!) sáng khi bóp phanh
+    setBadge(badgePark, x.ready < 0 ? -1 : (x.ready == 0 ? 1 : 0));
+    setBadge(badgeReady, x.ready);
     setBadge(badgeBrake, x.brake);
-    setBadge(badgeStand, x.stand);
 
     // ô raw thay cho hình xe (chạm ô để bật/tắt)
     const bool showDebug = debugShown && x.debug;
@@ -672,8 +720,13 @@ void uiUpdate(const VehicleState &s, bool bmsConnected, const UiExtras &x) {
         lv_obj_set_style_outline_color(bmsDot, c, 0);
     }
 
-    // giờ
-    uint32_t sec = (buildSeconds + millis() / 1000) % 86400;
+    // ngày + giờ
+    const uint32_t total = buildSeconds + millis() / 1000;
+    const uint32_t sec = total % 86400;
     snprintf(buf, sizeof(buf), "%02lu:%02lu", (unsigned long)(sec / 3600), (unsigned long)((sec / 60) % 60));
     setText(clockLbl, buf);
+    int dd, mm, yy;
+    dateAfterDays(total / 86400, dd, mm, yy);
+    snprintf(buf, sizeof(buf), "%02d/%02d/%04d", dd, mm, yy);
+    setText(dateLbl, buf);
 }

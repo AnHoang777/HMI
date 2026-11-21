@@ -4,6 +4,8 @@
 #include <driver/twai.h>
 #include <math.h>
 
+#include "vcu.h"
+
 namespace {
 
 // Waveshare ESP32-S3-Touch-LCD-4.3: bộ thu phát CAN nối GPIO15 (TX) / GPIO16 (RX)
@@ -98,6 +100,8 @@ void decode(const twai_message_t &f, uint32_t now) {
     if (f.extd || f.rtr) return;
     const uint8_t *d = f.data;
     const uint8_t n = f.data_length_code;
+
+    vcuDecode(f.identifier, d, n, now);   // khung của xe (0x102, 0x201, 0x400)
 
     switch (f.identifier) {
         case 0x309: {

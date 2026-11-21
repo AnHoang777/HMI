@@ -5,6 +5,7 @@
 //   0x320: nhiệt độ T1 (byte 0), T2 = nhiệt độ pin (byte 1), T3 (byte 3), đơn vị °C
 //   0x31A: byte 6-7 hợp lệ (2–4 V) 3 lần liên tiếp → pack 20 cell
 // Chỉ nghe, không gửi lệnh nào lên bus (TWAI vẫn ở chế độ NORMAL để ACK khung của BMS).
+// Mọi khung nhận được cũng được chuyển cho vcu.cpp để đọc tốc độ, ODO, phanh, chế độ.
 #include <stdint.h>
 
 struct BmsData {

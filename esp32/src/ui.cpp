@@ -247,9 +247,19 @@ void drawBack(lv_event_t *e) {
 }
 
 // ---------------------------------------------------------------- widget
-ModeTapHandler modeHandler = nullptr;
+UiCallbacks callbacks;
 
 lv_obj_t *speedLbl, *arcGlowWide, *arcGlow, *arcMain, *arcCore;
+lv_obj_t *scooterImg, *debugLbl;
+bool debugShown = true;
+
+// Đèn báo ở giữa thanh tiêu đề
+struct Badge {
+    lv_obj_t *box, *lbl;
+    uint32_t onColor;
+    int state;
+};
+Badge badgePark, badgeBrake, badgeStand;
 lv_obj_t *socLbl, *battBox, *battNub, *battSeg[5];
 lv_obj_t *odoLbl, *tripLbl, *tempLbl;
 lv_obj_t *rangeLbl, *voltLbl, *currLbl;
@@ -257,7 +267,8 @@ lv_obj_t *modeBtn, *modeLbl;
 lv_obj_t *bmsDot, *clockLbl;
 
 int lastBattLevel = -1;
-int lastMode = -1;
+char lastModeText[16] = "";
+uint32_t lastModeColor = 0xFFFFFFFF;
 int lastBms = -1;
 int buildSeconds = 0;
 
@@ -335,7 +346,63 @@ void setText(lv_obj_t *l, const char *t) {
 }
 
 void onModeClicked(lv_event_t *) {
-    if (modeHandler) modeHandler();
+    if (callbacks.onModeTap) callbacks.onModeTap();
+}
+
+void onTripLongPress(lv_event_t *) {
+    if (callbacks.onTripReset) callbacks.onTripReset();
+}
+
+void onBikeClicked(lv_event_t *) {
+    debugShown = !debugShown;
+}
+
+// Vùng chạm trong suốt phủ lên một ô thẻ
+lv_obj_t *makeTouchArea(lv_obj_t *parent, const Box &b) {
+    lv_obj_t *o = lv_obj_create(parent);
+    lv_obj_remove_style_all(o);
+    lv_obj_clear_flag(o, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(o, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_pos(o, b.x, b.y);
+    lv_obj_set_size(o, b.w, b.h);
+    return o;
+}
+
+Badge makeBadge(lv_obj_t *parent, const char *text, uint32_t onColor) {
+    Badge b;
+    b.onColor = onColor;
+    b.state = -2;
+    b.box = makeBox(parent);
+    lv_obj_set_size(b.box, LV_SIZE_CONTENT, 22);
+    lv_obj_set_style_pad_hor(b.box, 10, 0);
+    lv_obj_set_style_radius(b.box, 6, 0);
+    lv_obj_set_style_border_width(b.box, 2, 0);
+    lv_obj_set_style_bg_opa(b.box, LV_OPA_COVER, 0);
+    b.lbl = makeLabel(b.box, &font_label_16, cWhite(), text);
+    lv_obj_center(b.lbl);
+    return b;
+}
+
+// -1 chưa biết (viền xám, chữ mờ), 0 tắt (viền tối), 1 bật (nền màu, phát sáng)
+void setBadge(Badge &b, int state) {
+    if (state == b.state) return;
+    b.state = state;
+    const lv_color_t on = lv_color_hex(b.onColor);
+    if (state == 1) {
+        lv_obj_set_style_bg_color(b.box, on, 0);
+        lv_obj_set_style_border_color(b.box, lv_color_mix(cWhite(), on, 90), 0);
+        lv_obj_set_style_shadow_color(b.box, on, 0);
+        lv_obj_set_style_shadow_width(b.box, 10, 0);
+        lv_obj_set_style_shadow_opa(b.box, 160, 0);
+        lv_obj_set_style_text_color(b.lbl, lv_color_hex(0x05101F), 0);
+    } else {
+        lv_obj_set_style_bg_color(b.box, lv_color_hex(0x07101F), 0);
+        lv_obj_set_style_border_color(b.box, state == 0 ? lv_color_mix(on, lv_color_hex(0x07101F), 90)
+                                                        : lv_color_hex(0x2A3550), 0);
+        lv_obj_set_style_shadow_width(b.box, 0, 0);
+        lv_obj_set_style_text_color(b.lbl, state == 0 ? lv_color_mix(on, lv_color_hex(0x07101F), 140)
+                                                      : lv_color_hex(0x4A5570), 0);
+    }
 }
 
 // Đồng hồ: chưa có nguồn giờ thật (RTC / WiFi / điện thoại) nên tạm tính từ giờ build firmware (UTC+7)
@@ -349,8 +416,8 @@ int parseBuildSeconds() {
 
 }  // namespace
 
-void uiCreate(ModeTapHandler onModeTap) {
-    modeHandler = onModeTap;
+void uiCreate(const UiCallbacks &cb) {
+    callbacks = cb;
     buildSeconds = parseBuildSeconds();
 
     lv_obj_t *scr = lv_scr_act();
@@ -390,6 +457,17 @@ void uiCreate(ModeTapHandler onModeTap) {
     lv_obj_set_style_pad_left(clockLbl, 14, 0);
     lv_obj_align(status, LV_ALIGN_TOP_RIGHT, -22, 15);
 
+    // --- đèn báo P / PHANH / CHỐNG giữa thanh tiêu đề
+    lv_obj_t *badges = makeBox(scr);
+    lv_obj_set_size(badges, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(badges, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(badges, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(badges, 10, 0);
+    badgePark = makeBadge(badges, "P", 0x1E9BFF);
+    badgeBrake = makeBadge(badges, "PHANH", 0xFF3B3B);
+    badgeStand = makeBadge(badges, "CHỐNG", 0xFFA51C);
+    placeCenter(badges, GX, 36);
+
     // --- ô SOC: cột pin dọc 5 vạch + SOC %
     battNub = makeBox(scr);
     lv_obj_set_pos(battNub, BATT_X + (BATT_W - NUB_W) / 2, BATT_Y - NUB_H);
@@ -424,7 +502,12 @@ void uiCreate(ModeTapHandler onModeTap) {
     placeLeft(socLbl, 102, 150);
 
     // --- ô hình xe
-    makeImage(scr, &img_scooter, CARD_BIKE.cx(), CARD_BIKE.cy() + 2);
+    scooterImg = makeImage(scr, &img_scooter, CARD_BIKE.cx(), CARD_BIKE.cy() + 2);
+    debugLbl = makeLabel(scr, &font_label_16, lv_color_hex(0x9FE8FF), "");
+    lv_obj_set_style_text_line_space(debugLbl, -2, 0);
+    lv_obj_set_pos(debugLbl, CARD_BIKE.x + 12, CARD_BIKE.y + 6);
+    lv_obj_add_flag(debugLbl, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_event_cb(makeTouchArea(scr, CARD_BIKE), onBikeClicked, LV_EVENT_CLICKED, NULL);
 
     // --- đồng hồ tốc độ: 3 lớp quầng + lõi sáng
     arcGlowWide = makeArc(scr, 36, cBlue(), 45);
@@ -461,6 +544,7 @@ void uiCreate(ModeTapHandler onModeTap) {
     makeStat(scr, R_TEXT_X, CARD_R[0].cy(), "ODO", cLabel(), "km", &odoLbl);
     makeStat(scr, R_TEXT_X, CARD_R[1].cy(), "TRIP", cLabel(), "km", &tripLbl);
     makeStat(scr, R_TEXT_X, CARD_R[2].cy(), "Nhiệt độ pin", lv_color_hex(0xDCE6F5), "°C", &tempLbl);
+    lv_obj_add_event_cb(makeTouchArea(scr, CARD_R[1]), onTripLongPress, LV_EVENT_LONG_PRESSED, NULL);
 
     // --- ô dưới: quãng đường còn lại | logo | điện áp, dòng điện
     makeImage(scr, &img_bolt, 54, CARD_BOTTOM.cy());
@@ -495,8 +579,24 @@ static void setNum(lv_obj_t *lbl, const char *fmt, float v, bool asInt = false) 
     setText(lbl, buf);
 }
 
-void uiUpdate(const VehicleState &s, bool bmsConnected) {
+void uiUpdate(const VehicleState &s, bool bmsConnected, const UiExtras &x) {
     char buf[32];
+
+    // đèn báo
+    setBadge(badgePark, x.park);
+    setBadge(badgeBrake, x.brake);
+    setBadge(badgeStand, x.stand);
+
+    // ô raw thay cho hình xe (chạm ô để bật/tắt)
+    const bool showDebug = debugShown && x.debug;
+    if (showDebug) {
+        setText(debugLbl, x.debug);
+        lv_obj_clear_flag(debugLbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(scooterImg, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(debugLbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(scooterImg, LV_OBJ_FLAG_HIDDEN);
+    }
 
     // tốc độ
     setNum(speedLbl, "%d", s.speed, true);
@@ -545,10 +645,13 @@ void uiUpdate(const VehicleState &s, bool bmsConnected) {
     setNum(currLbl, "%.2f", s.current);
 
     // chế độ lái
-    if ((int)s.mode != lastMode) {
-        lastMode = (int)s.mode;
-        lv_color_t c = lv_color_hex(modeColorHex(s.mode));
-        setText(modeLbl, modeTitle(s.mode));
+    const char *modeText = x.modeText ? x.modeText : modeTitle(s.mode);
+    const uint32_t modeColor = x.modeText ? x.modeColor : modeColorHex(s.mode);
+    if (strcmp(modeText, lastModeText) != 0 || modeColor != lastModeColor) {
+        snprintf(lastModeText, sizeof(lastModeText), "%s", modeText);
+        lastModeColor = modeColor;
+        lv_color_t c = lv_color_hex(modeColor);
+        setText(modeLbl, modeText);
         lv_obj_set_style_text_color(modeLbl, c, 0);
         lv_obj_set_style_border_color(modeBtn, c, 0);
         lv_obj_set_style_outline_color(modeBtn, c, 0);

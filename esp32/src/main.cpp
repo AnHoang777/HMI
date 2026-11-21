@@ -1,7 +1,8 @@
 // Bảng đồng hồ xe máy điện – Waveshare ESP32-S3-Touch-LCD-4.3
-// SOC, điện áp, dòng điện, nhiệt độ pin đọc từ BMS qua CAN (bms.cpp).
-// Không có dữ liệu thật thì hiện "--". Đặt DEMO_SIMULATION = true để chạy số liệu giả lập.
-// Chạm nút ECO để đổi chế độ lái.
+// SOC, điện áp, dòng điện, nhiệt độ pin đọc từ BMS (bms.cpp); tốc độ, ODO, TRIP, phanh, chân chống,
+// chế độ đọc từ CAN của xe (vcu.cpp). Không có dữ liệu thật thì hiện "--".
+// Đặt DEMO_SIMULATION = true để chạy số liệu giả lập.
+// Chạm ô hình xe: bật/tắt ô số raw. Giữ lâu ô TRIP: reset TRIP.
 #include <Arduino.h>
 #include <esp_heap_caps.h>
 #include <lvgl.h>
@@ -10,6 +11,7 @@
 #include "bms.h"
 #include "board.h"
 #include "ui.h"
+#include "vcu.h"
 #include "vehicle.h"
 
 namespace {
@@ -21,16 +23,48 @@ constexpr bool DEMO_SIMULATION = false;   // true = chạy dữ liệu giả l�
 VehicleState realState() {
     VehicleState s;
     const BmsData &b = bmsData();
-    s.speed = NAN;          // chưa có nguồn tốc độ
-    s.odo = NAN;
-    s.trip = NAN;
-    s.range = NAN;
+    const VcuData &v = vcuData();
+    s.speed = v.speedKmh;
+    s.odo = v.odoKm;
+    s.trip = v.tripKm;
+    s.range = NAN;          // chưa có cách tính quãng đường còn lại từ dữ liệu thật
     s.soh = b.sohValid ? b.soh : NAN;
     s.soc = b.socValid ? b.soc : NAN;
     s.voltage = b.packValid ? b.voltage : NAN;
     s.current = b.packValid ? b.current : NAN;
     s.batteryTemp = b.tempValid ? b.batteryTemp() : NAN;
     return s;
+}
+
+// Đèn báo, chế độ và ô raw từ CAN của xe
+UiExtras realExtras() {
+    static char modeBuf[12];
+    static char debugBuf[200];
+    UiExtras x;
+    const VcuData &v = vcuData();
+
+    if (v.stateValid) {
+        uint32_t color = 0;
+        bool park = false;
+        const char *name = vcuModeName(v.stateRaw, &color, &park);
+        if (name) {
+            x.modeText = name;
+            x.modeColor = color;
+            x.park = park ? 1 : 0;
+        } else {
+            snprintf(modeBuf, sizeof(modeBuf), "0x%02X", v.stateRaw);   // mã chưa có trong bảng
+            x.modeText = modeBuf;
+            x.modeColor = 0xDCE6F5;
+        }
+        x.stand = v.standBit ? 1 : 0;
+    } else {
+        x.modeText = "--";
+    }
+    if (v.motionValid) x.brake = v.brakeBit ? 1 : 0;
+
+    vcuDebugText(debugBuf, sizeof(debugBuf));
+    x.debug = debugBuf;
+    return x;
 }
 
 lv_disp_draw_buf_t drawBuf;
@@ -88,9 +122,13 @@ void setup() {
     indevDrv.read_cb = touchCb;
     lv_indev_drv_register(&indevDrv);
 
+    vcuBegin();
     bmsBegin();
 
-    uiCreate(onModeTap);
+    UiCallbacks cb;
+    cb.onModeTap = onModeTap;
+    cb.onTripReset = vcuResetTrip;
+    uiCreate(cb);
     uiUpdate(DEMO_SIMULATION ? sim.state() : realState(), false);
 }
 
@@ -99,6 +137,7 @@ void loop() {
     const uint32_t now = millis();
 
     bmsPoll();
+    vcuUpdate();
 
     if (now - lastStep >= 100) {
         lastStep = now;
@@ -107,8 +146,7 @@ void loop() {
             uiUpdate(sim.state(), bmsOnline());
         } else {
             VehicleState s = realState();
-            s.mode = sim.state().mode;    // chế độ lái do người dùng chọn
-            uiUpdate(s, bmsOnline());
+            uiUpdate(s, bmsOnline(), realExtras());
         }
     }
 
